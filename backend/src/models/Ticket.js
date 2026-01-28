@@ -1,54 +1,56 @@
 const mongoose = require('mongoose');
 
 const TicketSchema = new mongoose.Schema({
-    // --- Dados vindos do Endpoint 1 (Lista/Eventos) ---
     event_id: {
         type: String,
         required: true,
-        unique: true, // Garante que não duplicaremos eventos
-        index: true   // Facilita a busca rápida
+        unique: true,
+        index: true
     },
     event_name: String,
     activity_number: {
         type: String,
-        index: true // Vamos usar isso para buscar o detalhe no Endpoint 2
+        index: true
     },
-    activity_severity_name: String, // ex: NBI, BI
-    queue_name: String,             // ex: CXT_GLOBAL
-    user_name: String,              // ID do engenheiro
-    user_flu_name: String,          // Nome completo do engenheiro
+    activity_severity_name: String,
+    queue_name: String,
+    user_name: String,
+    user_flu_name: String,
+    user_first_name: String, // Adicionado para garantir
+    user_last_name: String,  // Adicionado para garantir
+    customer_fl: String,     // Adicionado para garantir
     customer_name: String,
-    entered_time: String,           // Timestamp vindo da API
-    activity_type_name: String,     // ex: Break/Fix
-    activity_skill_name: String,    // ex: CCS/SES
+    entered_time: String,
+    activity_type_name: String,
+    activity_skill_name: String,
 
-    // --- Dados vindos do Endpoint 2 (Detalhes) ---
-    // Armazenamos dentro de um objeto 'detail' conforme sua solicitação
+    // --- NOVOS CAMPOS ADICIONADOS ---
+    billable: String,
+    credit_risk: String,
+    co_delivery: String,
+    // ---------------------------------
+
     detail: {
         activity_id: String,
-        activity_status_name: String, // Importante para o gráfico (ex: Completed, Open)
+        activity_status_name: String,
         activity_description: String,
-        activity_closed: String,      // "0" ou "1"
-        owner_flu_name: String,       // Dono atual do ticket
+        activity_closed: String,
+        owner_flu_name: String,
         created_date: String,
         updated_date: String,
-        // Podemos permitir campos flexíveis aqui caso a API mude
-        // mas definimos os principais acima para indexação.
     },
 
-    // --- Campos de Controle da Nossa Aplicação ---
     last_updated_at: {
         type: Date,
         default: Date.now
     }
 });
 
-// Método estático para facilitar salvar ou atualizar (Upsert)
 TicketSchema.statics.upsertTicket = async function(ticketData) {
     return this.findOneAndUpdate(
-        { event_id: ticketData.event_id }, // Busca por event_id
-        ticketData,                        // Dados a atualizar
-        { upsert: true, new: true }        // Cria se não existir
+        { event_id: ticketData.event_id },
+        ticketData,
+        { upsert: true, new: true }
     );
 };
 
