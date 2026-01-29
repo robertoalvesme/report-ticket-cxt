@@ -73,6 +73,19 @@ const RevenueCategories = computed(() => ({
  *             "type": "Installation",
  *             "count": 7
  *         }
+ *     ],
+ *     "list": [
+ *         {
+ *             "event_id": "33642575",
+ *             "activity_number": "1-23436769782",
+ *             "billable": "0",
+ *             "co_delivery": "0",
+ *             "credit_risk": "0",
+ *             "customer_name": "NRSSO_ROW- Get Sold to from Customer",
+ *             "user_flu_name": "Vinayak Y B (vyb)",
+ *             "is_nrsso": "1",
+ *             "entered_time_gmt": "29/01/2026 02:32:35"
+ *         },
  *     ]
  * }
  */
@@ -105,17 +118,18 @@ const totalBillable = computed(() => summary.value.summary.totalBillable )
 const totalCreditRisk = computed(() => summary.value.summary.totalCreditRisk )
 const totalCoDelivery = computed(() => summary.value.summary.totalCoDelivery )
 const totalNRSSO = computed(() => summary.value.summary.totalNRSSO )
+const ticketList  = computed(() => summary.value.list )
 
 const RevenueData = computed(() => {
   const items = (summary.value?.types ?? []) as Array<{ type: string; count: number }>
   return items.slice().sort((a, b) => b.count - a.count)
 })
 
+
 const xFormatter = (n: number): string => {
   const item = RevenueData.value[n]
   return item?.type ?? n.toString()
 }
-
 
 const yFormatter = (tick: number) => tick.toString()
 
@@ -123,7 +137,7 @@ const yFormatter = (tick: number) => tick.toString()
 
 <template>
 
-  <header class="my-10">
+  <header class="space-y-6">
     <form>
       <div class="grid gap-6 mb-6 md:grid-cols-3 md:w-3xl mx-auto">
         <div>
@@ -170,24 +184,96 @@ const yFormatter = (tick: number) => tick.toString()
   </section>
 
 
-  <div  v-if="hasSummary" class="mx-auto max-w-3xl space-y-6 rounded-lg" :class="showTitle ? 'p-6' : ''">
+  <section v-if="hasSummary" class="mx-auto max-w-3xl space-y-6 rounded-lg" :class="showTitle ? 'p-6' : ''">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-semibold">
         Tickets by type
       </h3>
     </div>
     <BarChart
-        :data="RevenueData"
-        :height="300"
-        :categories="RevenueCategories"
         :y-axis="['count']"
+        :data="RevenueData"
+        :categories="RevenueCategories"
+        :x-formatter="xFormatter"
+        :height="300"
         :x-num-ticks="6"
         :radius="4"
         :y-grid-line="true"
-        :x-formatter="xFormatter"
         :y-formatter="yFormatter"
         :legend-position="LegendPosition.TopRight"
         :hide-legend="false"
     />
-  </div>
+  </section>
+
+
+  <section v-if="hasSummary" class="bg-white dark:bg-gray-900">
+
+    Total on this list: {{ ticketList.length }}
+
+    <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
+      <table class="w-full text-sm text-left rtl:text-right text-body">
+        <thead class="bg-neutral-secondary-soft border-b border-default">
+          <tr>
+          <th scope="col" class="px-6 py-3 font-medium">
+            SR#
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            Date
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            Billable
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            Codelivery
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            Credit Risk
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            NRSSO
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            Customer
+          </th>
+          <th scope="col" class="px-6 py-3 font-medium">
+            User
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+          <tr v-for="item in ticketList" class="odd:bg-neutral-primary even:bg-neutral-secondary-soft border-b border-default">
+            <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
+              {{ item.activity_number }}
+            </th>
+            <td class="px-6 py-4">
+              {{ item.entered_time_gmt }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.billable == 1 ? 'Yes' : 'No' }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.co_delivery == 1 ? 'Yes' : 'No' }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.credit_risk == 1 ? 'Yes' : 'No' }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.is_nrsso == 1 ? 'Yes' : 'No' }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.customer_name }}
+            </td>
+            <td class="px-6 py-4">
+              {{ item.user_flu_name }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+  </section>
+
+
+
 </template>
