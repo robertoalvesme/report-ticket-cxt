@@ -6,19 +6,30 @@ class APIController {
     /**
      * Converte data DD/MM/YYYY para Unix Timestamp (String)
      */
+    // backend/src/controllers/APIController.js
     _dateToTimestamp(dateStr, endOfDay = false) {
         if (!dateStr) return null;
-        const [day, month, year] = dateStr.split('/');
-        const date = new Date(year, month - 1, day);
+        const parts = dateStr.trim().split('-');
+        if (parts.length !== 3) return null;
 
-        if (endOfDay) {
-            date.setHours(23, 59, 59, 999);
-        } else {
-            date.setHours(0, 0, 0, 0);
-        }
+        const [yearStr, monthStr, dayStr] = parts;
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10) - 1;
+        const day = parseInt(dayStr, 10);
 
-        // Retorna em segundos (como a API OCD) e como String
-        return Math.floor(date.getTime() / 1000).toString();
+        if (Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)) return null;
+
+        const ms = Date.UTC(
+            year,
+            month,
+            day,
+            endOfDay ? 23 : 0,
+            endOfDay ? 59 : 0,
+            endOfDay ? 59 : 0,
+            endOfDay ? 999 : 0
+        );
+
+        return Math.floor(ms / 1000).toString();
     }
 
     async getDashboardData(req, res) {
