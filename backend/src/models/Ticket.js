@@ -16,19 +16,20 @@ const TicketSchema = new mongoose.Schema({
     queue_name: String,
     user_name: String,
     user_flu_name: String,
-    user_first_name: String, // Adicionado para garantir
-    user_last_name: String,  // Adicionado para garantir
-    customer_fl: String,     // Adicionado para garantir
+    user_first_name: String,
+    user_last_name: String,
+    customer_fl: String,
     customer_name: String,
     entered_time: String,
     activity_type_name: String,
     activity_skill_name: String,
 
-    // --- NOVOS CAMPOS ADICIONADOS ---
-    billable: String,
-    credit_risk: String,
-    co_delivery: String,
-    // ---------------------------------
+    // --- CAMPOS BOOLEANOS ---
+    billable: { type: Boolean, default: false },
+    credit_risk: { type: Boolean, default: false },
+    co_delivery: { type: Boolean, default: false },
+    nrsso: { type: Boolean, default: false, index: true }, // Indexado para facilitar filtro
+    // ------------------------
 
     detail: {
         activity_id: String,

@@ -7,9 +7,6 @@ class TicketUsecase {
         console.log('--- Iniciando Sincronização de Lista ---');
 
         const lastTicket = await Ticket.findOne().sort({ event_id: -1 });
-        // Dica: Para forçar uma reimportação e corrigir os dados antigos,
-        // você pode temporariamente mudar este valor padrão para um ID bem antigo
-        // ou rodar um script para limpar o banco.
         let currentEventId = lastTicket ? lastTicket.event_id : '28595223';
 
         console.log(`Usando event_id_last: ${currentEventId}`);
@@ -28,6 +25,9 @@ class TicketUsecase {
 
         for (const ticketData of tickets) {
             try {
+                // Lógica para definir se é NRSSO
+                const isNrsso = ticketData.customer_fl === '0000000010';
+
                 const payload = {
                     event_id: ticketData.event_id,
                     event_name: ticketData.event_name,
@@ -44,12 +44,12 @@ class TicketUsecase {
                     activity_type_name: ticketData.activity_type_name,
                     activity_skill_name: ticketData.activity_skill_name,
 
-                    // --- CORREÇÃO AQUI: Mapeando e Normalizando os campos ---
-                    // Se for "1", mantém "1". Qualquer outra coisa (vazio, null), vira "0"
-                    billable: ticketData.billable === '1' ? '1' : '0',
-                    credit_risk: ticketData.credit_risk === '1' ? '1' : '0',
-                    co_delivery: ticketData.co_delivery === '1' ? '1' : '0',
-                    // --------------------------------------------------------
+                    // --- CONVERSÃO PARA BOOLEANO ---
+                    billable: ticketData.billable === '1',
+                    credit_risk: ticketData.credit_risk === '1',
+                    co_delivery: ticketData.co_delivery === '1',
+                    nrsso: isNrsso
+                    // -------------------------------
                 };
 
                 await Ticket.upsertTicket(payload);

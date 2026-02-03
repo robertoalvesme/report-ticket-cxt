@@ -5,6 +5,7 @@ class APIController {
 
     _dateToTimestamp(dateStr, endOfDay = false) {
         if (!dateStr) return null;
+
         // Tratamento robusto para DD/MM/YYYY ou YYYY-MM-DD
         const parts = dateStr.includes('/') ? dateStr.split('/') : dateStr.split('-');
 
@@ -39,7 +40,7 @@ class APIController {
 
             console.log(`Buscando (FULL LIST) entre ${startDate} e ${endDate}`);
 
-            // --- Lógica de Sync (Mantida) ---
+            // --- Lógica de Sync (Verifica se precisa buscar novos dados) ---
             const lastTicket = await Ticket.findOne().sort({ entered_time: -1 });
             let dbMaxTs = lastTicket && lastTicket.entered_time ? parseInt(lastTicket.entered_time) : 0;
 
@@ -57,25 +58,26 @@ class APIController {
                 },
                 {
                     $facet: {
-                        // 1. Estatísticas Globais
+                        // 1. Estatísticas Globais (Agora baseadas em Booleanos)
                         "summary": [
                             {
                                 $group: {
                                     _id: null,
                                     totalTickets: { $sum: 1 },
+
+                                    // Soma se o campo for true
                                     totalBillable: {
-                                        $sum: { $cond: [{ $eq: ["$billable", "1"] }, 1, 0] }
+                                        $sum: { $cond: [{ $eq: ["$billable", true] }, 1, 0] }
                                     },
                                     totalCreditRisk: {
-                                        $sum: { $cond: [{ $eq: ["$credit_risk", "1"] }, 1, 0] }
+                                        $sum: { $cond: [{ $eq: ["$credit_risk", true] }, 1, 0] }
                                     },
                                     totalCoDelivery: {
-                                        $sum: { $cond: [{ $eq: ["$co_delivery", "1"] }, 1, 0] }
+                                        $sum: { $cond: [{ $eq: ["$co_delivery", true] }, 1, 0] }
                                     },
+                                    // Usa o campo nrsso direto do banco
                                     totalNRSSO: {
-                                        $sum: {
-                                            $cond: [{ $regexMatch: { input: "$customer_name", regex: /NRSSO/i } }, 1, 0]
-                                        }
+                                        $sum: { $cond: [{ $eq: ["$nrsso", true] }, 1, 0] }
                                     }
                                 }
                             }
@@ -89,7 +91,7 @@ class APIController {
                                 }
                             }
                         ],
-                        // 3. A Lista COMPLETA (Sem skip/limit)
+                        // 3. A Lista COMPLETA (Sem paginação)
                         "tickets": [
                             { $sort: { entered_time: -1 } },
                             {
@@ -101,30 +103,26 @@ class APIController {
                                     user_flu_name: 1,
                                     activity_status: "$detail.activity_status_name",
 
-                                    // Flags solicitadas (Retorna "1" ou "0")
+                                    // Novos campos solicitados
+                                    activity_skill_name: 1,
+                                    activity_type_name: 1,
+
+                                    // Flags booleanas (Retornará true/false no JSON)
                                     billable: 1,
                                     credit_risk: 1,
                                     co_delivery: 1,
-
-                                    // Cálculo de NRSSO linha a linha
-                                    is_nrsso: {
-                                        $cond: [
-                                            { $regexMatch: { input: "$customer_name", regex: /NRSSO/i } },
-                                            "1",
-                                            "0"
-                                        ]
-                                    },
+                                    nrsso: 1,
 
                                     // Conversão de Data para GMT legível
                                     entered_time_gmt: {
                                         $dateToString: {
-                                            format: "%d/%m/%Y %H:%M:%S", // Formato Brasileiro com hora
+                                            format: "%d/%m/%Y %H:%M:%S",
                                             date: {
                                                 $toDate: {
                                                     $multiply: [{ $toDouble: "$entered_time" }, 1000]
                                                 }
                                             },
-                                            timezone: "GMT" // Força GMT
+                                            timezone: "GMT"
                                         }
                                     }
                                 }
@@ -143,7 +141,7 @@ class APIController {
                     totalTickets: 0, totalBillable: 0, totalCreditRisk: 0, totalCoDelivery: 0, totalNRSSO: 0
                 },
                 types: data.byType.map(t => ({ type: t._id || 'Outros', count: t.count })),
-                list: data.tickets // Retorna todos os itens
+                list: data.tickets
             });
 
         } catch (error) {
