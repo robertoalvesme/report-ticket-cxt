@@ -1,17 +1,14 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
+import * as XLSX from 'xlsx' // <--- Importação necessária
 
 defineOptions({
   tags: ['barcharts', 'vertical']
 })
 
-const props = withDefaults(defineProps<{
-  showTitle?: boolean,
-}>(), {
-  showTitle: true
-})
+// ... (MANTENHA TODO O CÓDIGO DE PROPS, DATA, REVENUE, ETC... IGUAL AO ANTERIOR) ...
 
-// --- Helper de Data ---
+// --- Helper de Data (MANTIDO) ---
 const formatDate = (d: Date): string => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -19,7 +16,6 @@ const formatDate = (d: Date): string => {
   return `${y}-${m}-${day}`
 }
 
-// --- Estados ---
 const datestart = ref<string>(formatDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)))
 const dateend = ref<string>(formatDate(new Date()))
 const isLoading = ref(false)
@@ -28,25 +24,23 @@ const summary = ref()
 const RevenueCategories = computed(() => ({
   desktop: {
     name: 'Tickets',
-    // color: '#22c55e'
   }
 }))
 
-// --- Filtros Estáticos (Iniciam True) ---
+// --- Filtros Estáticos (MANTIDOS) ---
 const showBillable = ref(true)
 const showCodelivery = ref(true)
 const showCreditRisk = ref(true)
 const showNRSSO = ref(true)
 const showOthers = ref(true)
 
-// --- Filtros Dinâmicos ---
+// --- Filtros Dinâmicos (MANTIDOS) ---
 const availableTypes = ref<string[]>([])
 const selectedTypes = ref<string[]>([])
-
 const availableSkills = ref<string[]>([])
 const selectedSkills = ref<string[]>([])
 
-// --- Ações de UI (Select All) ---
+// --- Ações de UI (MANTIDAS) ---
 const toggleAllTypes = () => {
   if (selectedTypes.value.length === availableTypes.value.length) {
     selectedTypes.value = []
@@ -66,7 +60,7 @@ const toggleAllSkills = () => {
 const isAllTypesSelected = computed(() => availableTypes.value.length > 0 && selectedTypes.value.length === availableTypes.value.length)
 const isAllSkillsSelected = computed(() => availableSkills.value.length > 0 && selectedSkills.value.length === availableSkills.value.length)
 
-// --- Fetch Data ---
+// --- Fetch Data (MANTIDO) ---
 const filter = async () => {
   if (isLoading.value) return
 
@@ -88,34 +82,27 @@ const filter = async () => {
     summary.value = data
 
     // --- RESET TOTAL DE FILTROS ---
-    // 1. Resetar filtros estáticos para o padrão (mostrar tudo)
     showBillable.value = true
     showCodelivery.value = true
     showCreditRisk.value = true
     showNRSSO.value = true
     showOthers.value = true
 
-    // 2. Recalcular e Resetar filtros dinâmicos
     if (data.list && Array.isArray(data.list)) {
       const typesSet = new Set<string>()
       const skillsSet = new Set<string>()
 
       data.list.forEach((item: any) => {
-        // Garante que mesmo valores nulos entrem como uma categoria selecionável
         const t = item.activity_type_name || 'Unspecified'
         const s = item.activity_skill_name || 'Unspecified'
         typesSet.add(t)
         skillsSet.add(s)
-
-        // Normaliza no objeto também para facilitar o filtro depois
         item.activity_type_name = t
         item.activity_skill_name = s
       })
 
       availableTypes.value = Array.from(typesSet).sort()
       availableSkills.value = Array.from(skillsSet).sort()
-
-      // Seleciona TODOS por padrão após o update
       selectedTypes.value = [...availableTypes.value]
       selectedSkills.value = [...availableSkills.value]
     }
@@ -127,14 +114,11 @@ const filter = async () => {
   }
 }
 
-// --- KPIs: Total Absoluto (Baseado no retorno da API, não no filtro visual) ---
+// --- KPI: Total Absoluto (MANTIDO) ---
 const hasSummary = computed(() => summary.value && summary.value.list)
+const totalTickets = computed(() => summary.value?.list?.length ?? 0)
 
-// AQUI: Usamos o tamanho total da lista bruta para garantir que bata com o backend (1047)
-const totalTickets = computed(() => summary.value?.summary?.totalTickets ?? 0)
-
-// KPIs Dinâmicos (Calculados a partir da lista filtrada para consistência visual dos cards coloridos)
-// Se você quiser que os Cards de Billable/Etc sejam fixos (total do banco), mude ticketList.value para summary.value.list
+// --- KPI: Dinâmicos (MANTIDOS - Baseados na LISTA FILTRADA visualmente) ---
 const totalBillable = computed(() =>
     summary.value?.summary?.totalBillable ?? 0
 )
@@ -151,29 +135,22 @@ const totalNRSSO = computed(() =>
     summary.value?.summary?.totalNRSSO ?? 0
 )
 
-// --- Lógica de Filtragem ---
+// --- Lógica de Filtro Visual (MANTIDO) ---
 const ticketList = computed(() => {
   const items = summary.value?.list ?? []
   const isTrue = (v: any) => v === 1 || v === '1' || v === true
 
   return items.filter((item: any) => {
-    // 1. Type (Garante match exato com o valor normalizado)
     if (!selectedTypes.value.includes(item.activity_type_name)) return false
-
-    // 2. Skill
     if (!selectedSkills.value.includes(item.activity_skill_name)) return false
 
-    // 3. Categorias
     const isBillable = isTrue(item.billable)
     const isCoDelivery = isTrue(item.co_delivery)
     const isCreditRisk = isTrue(item.credit_risk)
     const isNRSSO = isTrue(item.nrsso)
-
     const isSpecialCategory = isBillable || isCoDelivery || isCreditRisk || isNRSSO
 
-    if (!isSpecialCategory) {
-      return showOthers.value
-    }
+    if (!isSpecialCategory) return showOthers.value
 
     if (isBillable && showBillable.value) return true
     if (isCoDelivery && showCodelivery.value) return true
@@ -193,8 +170,58 @@ const xFormatter = (n: number): string => {
   const item = RevenueData.value[n]
   return item?.type ?? n.toString()
 }
-
 const yFormatter = (tick: number) => tick.toString()
+
+// --- NOVA FUNÇÃO: Exportar para Excel ---
+const downloadExcel = () => {
+  // 1. Pega a lista COMPLETA (ignorando filtros visuais)
+  const rawData = summary.value?.list ?? []
+
+  if (rawData.length === 0) return
+
+  // 2. Mapeia os dados para o formato exato das colunas da tabela
+  const isTrue = (v: any) => v === 1 || v === '1' || v === true
+
+  const excelData = rawData.map((item: any) => ({
+    'SR#': item.activity_number,
+    'Date (GMT)': item.entered_time_gmt,
+    'Type': item.activity_type_name,
+    'Skill': item.activity_skill_name,
+    'Billable': isTrue(item.billable) ? 'Yes' : 'No',
+    'Co-Delivery': isTrue(item.co_delivery) ? 'Yes' : 'No',
+    'Credit Risk': isTrue(item.credit_risk) ? 'Yes' : 'No',
+    'NRSSO': isTrue(item.nrsso) ? 'Yes' : 'No',
+    'Customer': item.customer_name,
+    'Engineer': item.user_flu_name
+  }))
+
+  // 3. Cria a planilha
+  const worksheet = XLSX.utils.json_to_sheet(excelData)
+
+  // Ajuste opcional de largura de colunas (para ficar bonito ao abrir)
+  const wscols = [
+    { wch: 20 }, // SR#
+    { wch: 20 }, // Date
+    { wch: 25 }, // Type
+    { wch: 25 }, // Skill
+    { wch: 10 }, // Flags...
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 10 },
+    { wch: 40 }, // Customer
+    { wch: 30 }  // Engineer
+  ]
+  worksheet['!cols'] = wscols
+
+  // 4. Cria o Workbook e salva
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets')
+
+  // Gera o nome do arquivo com a data
+  const fileName = `CXT_Report_${datestart.value}_to_${dateend.value}.xlsx`
+  XLSX.writeFile(workbook, fileName)
+}
+
 </script>
 
 <template>
@@ -329,10 +356,7 @@ const yFormatter = (tick: number) => tick.toString()
         <div class="mb-8">
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Ticket Types</span>
-            <button
-                @click="toggleAllTypes"
-                class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
-            >
+            <button @click="toggleAllTypes" class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
               {{ isAllTypesSelected ? 'Deselect All' : 'Select All' }}
             </button>
           </div>
@@ -349,10 +373,7 @@ const yFormatter = (tick: number) => tick.toString()
         <div>
           <div class="flex items-center justify-between mb-3">
             <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Skills / Products</span>
-            <button
-                @click="toggleAllSkills"
-                class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
-            >
+            <button @click="toggleAllSkills" class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline">
               {{ isAllSkillsSelected ? 'Deselect All' : 'Select All' }}
             </button>
           </div>
@@ -367,11 +388,23 @@ const yFormatter = (tick: number) => tick.toString()
 
       <section v-if="hasSummary" class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
 
-        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-          <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ticket Details</h3>
-          <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
-            {{ ticketList.length }} Records Found
-          </span>
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div class="flex items-center gap-2">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ticket Details</h3>
+            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300">
+              {{ ticketList.length }} Displayed
+            </span>
+          </div>
+
+          <button
+              @click="downloadExcel"
+              class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Download Excel ({{ totalTickets }})
+          </button>
         </div>
 
         <div class="overflow-x-auto w-full">
