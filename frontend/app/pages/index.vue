@@ -22,7 +22,7 @@ const formatDate = (d: Date): string => {
 // --- Estados ---
 const datestart = ref<string>(formatDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)))
 const dateend = ref<string>(formatDate(new Date()))
-const isLoading = ref(false) // Estado de carregamento
+const isLoading = ref(false)
 const summary = ref()
 
 const RevenueCategories = computed(() => ({
@@ -32,7 +32,7 @@ const RevenueCategories = computed(() => ({
   }
 }))
 
-// --- Filtros Estáticos ---
+// --- Filtros Estáticos (Iniciam True) ---
 const showBillable = ref(true)
 const showCodelivery = ref(true)
 const showCreditRisk = ref(true)
@@ -66,7 +66,6 @@ const toggleAllSkills = () => {
 const isAllTypesSelected = computed(() => availableTypes.value.length > 0 && selectedTypes.value.length === availableTypes.value.length)
 const isAllSkillsSelected = computed(() => availableSkills.value.length > 0 && selectedSkills.value.length === availableSkills.value.length)
 
-
 // --- Fetch Data ---
 const filter = async () => {
   if (isLoading.value) return
@@ -88,21 +87,35 @@ const filter = async () => {
     console.log('dashboard data', data)
     summary.value = data
 
-    // Popular filtros dinâmicos se estiverem vazios ou se a lista mudar drasticamente
-    // (Aqui optamos por sempre repopular para garantir consistência com a nova data)
+    // --- RESET TOTAL DE FILTROS ---
+    // 1. Resetar filtros estáticos para o padrão (mostrar tudo)
+    showBillable.value = true
+    showCodelivery.value = true
+    showCreditRisk.value = true
+    showNRSSO.value = true
+    showOthers.value = true
+
+    // 2. Recalcular e Resetar filtros dinâmicos
     if (data.list && Array.isArray(data.list)) {
       const typesSet = new Set<string>()
       const skillsSet = new Set<string>()
 
       data.list.forEach((item: any) => {
-        if (item.activity_type_name) typesSet.add(item.activity_type_name)
-        if (item.activity_skill_name) skillsSet.add(item.activity_skill_name)
+        // Garante que mesmo valores nulos entrem como uma categoria selecionável
+        const t = item.activity_type_name || 'Unspecified'
+        const s = item.activity_skill_name || 'Unspecified'
+        typesSet.add(t)
+        skillsSet.add(s)
+
+        // Normaliza no objeto também para facilitar o filtro depois
+        item.activity_type_name = t
+        item.activity_skill_name = s
       })
 
       availableTypes.value = Array.from(typesSet).sort()
       availableSkills.value = Array.from(skillsSet).sort()
 
-      // Reset para selecionar todos ao carregar novos dados
+      // Seleciona TODOS por padrão após o update
       selectedTypes.value = [...availableTypes.value]
       selectedSkills.value = [...availableSkills.value]
     }
@@ -114,13 +127,29 @@ const filter = async () => {
   }
 }
 
-// --- Computed Stats ---
-const hasSummary = computed(() => summary.value && summary.value.summary )
-const totalTickets = computed(() => summary.value?.summary?.totalTickets ?? 0)
-const totalBillable = computed(() => summary.value?.summary?.totalBillable ?? 0)
-const totalCreditRisk = computed(() => summary.value?.summary?.totalCreditRisk ?? 0)
-const totalCoDelivery = computed(() => summary.value?.summary?.totalCoDelivery ?? 0)
-const totalNRSSO = computed(() => summary.value?.summary?.totalNRSSO ?? 0)
+// --- KPIs: Total Absoluto (Baseado no retorno da API, não no filtro visual) ---
+const hasSummary = computed(() => summary.value && summary.value.list)
+
+// AQUI: Usamos o tamanho total da lista bruta para garantir que bata com o backend (1047)
+const totalTickets = computed(() => summary.value?.list?.length ?? 0)
+
+// KPIs Dinâmicos (Calculados a partir da lista filtrada para consistência visual dos cards coloridos)
+// Se você quiser que os Cards de Billable/Etc sejam fixos (total do banco), mude ticketList.value para summary.value.list
+const totalBillable = computed(() =>
+    ticketList.value.filter((i: any) => i.billable === 1 || i.billable === true).length
+)
+
+const totalCreditRisk = computed(() =>
+    ticketList.value.filter((i: any) => i.credit_risk === 1 || i.credit_risk === true).length
+)
+
+const totalCoDelivery = computed(() =>
+    ticketList.value.filter((i: any) => i.co_delivery === 1 || i.co_delivery === true).length
+)
+
+const totalNRSSO = computed(() =>
+    ticketList.value.filter((i: any) => i.nrsso === 1 || i.nrsso === true).length
+)
 
 // --- Lógica de Filtragem ---
 const ticketList = computed(() => {
@@ -128,8 +157,9 @@ const ticketList = computed(() => {
   const isTrue = (v: any) => v === 1 || v === '1' || v === true
 
   return items.filter((item: any) => {
-    // 1. Type
+    // 1. Type (Garante match exato com o valor normalizado)
     if (!selectedTypes.value.includes(item.activity_type_name)) return false
+
     // 2. Skill
     if (!selectedSkills.value.includes(item.activity_skill_name)) return false
 
@@ -138,9 +168,12 @@ const ticketList = computed(() => {
     const isCoDelivery = isTrue(item.co_delivery)
     const isCreditRisk = isTrue(item.credit_risk)
     const isNRSSO = isTrue(item.nrsso)
+
     const isSpecialCategory = isBillable || isCoDelivery || isCreditRisk || isNRSSO
 
-    if (!isSpecialCategory) return showOthers.value
+    if (!isSpecialCategory) {
+      return showOthers.value
+    }
 
     if (isBillable && showBillable.value) return true
     if (isCoDelivery && showCodelivery.value) return true
