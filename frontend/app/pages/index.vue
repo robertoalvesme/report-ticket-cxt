@@ -91,6 +91,13 @@ const RevenueCategories = computed(() => ({
  */
 const summary = ref()
 
+// Filter options
+const showBillable = ref(true)
+const showCodelivery = ref(true)
+const showCreditRisk = ref(true)
+const showNRSSO = ref(true)
+
+
 const filter = async () => {
   try {
     const params = new URLSearchParams({
@@ -118,7 +125,22 @@ const totalBillable = computed(() => summary.value.summary.totalBillable )
 const totalCreditRisk = computed(() => summary.value.summary.totalCreditRisk )
 const totalCoDelivery = computed(() => summary.value.summary.totalCoDelivery )
 const totalNRSSO = computed(() => summary.value.summary.totalNRSSO )
-const ticketList  = computed(() => summary.value.list )
+
+const ticketList = computed(() => {
+  const items = summary.value?.list ?? []
+
+  const isTrue = (v: any) => v === 1 || v === '1' || v === true
+
+  // When a "show" flag is false we exclude items where that field is true.
+  // When the "show" flag is true we don't filter on that field (show everything).
+  return items.filter((item: any) => {
+    if (!showBillable.value && isTrue(item.billable)) return false
+    if (!showCodelivery.value && isTrue(item.co_delivery)) return false
+    if (!showCreditRisk.value && isTrue(item.credit_risk)) return false
+    if (!showNRSSO.value && isTrue(item.is_nrsso)) return false
+    return true
+  })
+})
 
 const RevenueData = computed(() => {
   const items = (summary.value?.types ?? []) as Array<{ type: string; count: number }>
@@ -137,7 +159,7 @@ const yFormatter = (tick: number) => tick.toString()
 
 <template>
 
-  <header class="space-y-6">
+  <header class="space-y-10 mt-10">
     <form>
       <div class="grid gap-6 mb-6 md:grid-cols-3 md:w-3xl mx-auto">
         <div>
@@ -149,7 +171,9 @@ const yFormatter = (tick: number) => tick.toString()
           <input v-model="dateend" type="date" id="dateend" class="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs placeholder:text-body" required />
         </div>
         <div>
-          <button @click.prevent="filter" type="submit" class="text-white bg-brand box-border border border-transparent hover:bg-brand-strong focus:ring-4 focus:ring-brand-medium shadow-xs font-medium leading-5 rounded-base text-sm px-4 py-2.5 focus:outline-none">Update</button>
+          <button @click.prevent="filter" type="button" class="inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            Update
+          </button>
         </div>
       </div>
     </form>
@@ -206,9 +230,35 @@ const yFormatter = (tick: number) => tick.toString()
   </section>
 
 
+  <section class="max-w-7xl px-4 py-4 mx-auto">
+    <div class="flex gap-4 items-center justify-center">
+      <label class="inline-flex items-center">
+        <input type="checkbox" v-model="showBillable" class="mr-2" />
+        <span>Billable</span>
+      </label>
+      <label class="inline-flex items-center">
+        <input type="checkbox" v-model="showCodelivery" class="mr-2" />
+        <span>Co-delivery</span>
+      </label>
+      <label class="inline-flex items-center">
+        <input type="checkbox" v-model="showCreditRisk" class="mr-2" />
+        <span>Credit Risk</span>
+      </label>
+      <label class="inline-flex items-center">
+        <input type="checkbox" v-model="showNRSSO" class="mr-2" />
+        <span>NRSSO</span>
+      </label>
+    </div>
+  </section>
+
+
   <section v-if="hasSummary" class="bg-white dark:bg-gray-900">
 
-    Total on this list: {{ ticketList.length }}
+    Total on this list: {{ summary.list.length }}
+
+
+
+
 
     <div class="relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-base border border-default">
       <table class="w-full text-sm text-left rtl:text-right text-body">
