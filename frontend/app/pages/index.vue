@@ -131,24 +131,24 @@ const filter = async () => {
 const hasSummary = computed(() => summary.value && summary.value.list)
 
 // AQUI: Usamos o tamanho total da lista bruta para garantir que bata com o backend (1047)
-const totalTickets = computed(() => summary.value?.list?.length ?? 0)
+const totalTickets = computed(() => summary.value?.summary?.totalTickets ?? 0)
 
 // KPIs Dinâmicos (Calculados a partir da lista filtrada para consistência visual dos cards coloridos)
 // Se você quiser que os Cards de Billable/Etc sejam fixos (total do banco), mude ticketList.value para summary.value.list
 const totalBillable = computed(() =>
-    ticketList.value.filter((i: any) => i.billable === 1 || i.billable === true).length
+    summary.value?.summary?.totalBillable ?? 0
 )
 
 const totalCreditRisk = computed(() =>
-    ticketList.value.filter((i: any) => i.credit_risk === 1 || i.credit_risk === true).length
+    summary.value?.summary?.totalCreditRisk ?? 0
 )
 
 const totalCoDelivery = computed(() =>
-    ticketList.value.filter((i: any) => i.co_delivery === 1 || i.co_delivery === true).length
+    summary.value?.summary?.totalCoDelivery ?? 0
 )
 
 const totalNRSSO = computed(() =>
-    ticketList.value.filter((i: any) => i.nrsso === 1 || i.nrsso === true).length
+    summary.value?.summary?.totalNRSSO ?? 0
 )
 
 // --- Lógica de Filtragem ---
