@@ -31,6 +31,12 @@ const TicketSchema = new mongoose.Schema({
     nrsso: { type: Boolean, default: false, index: true }, // Indexado para facilitar filtro
     // ------------------------
 
+    // --- NOVOS CAMPOS ADICIONADOS ---
+    source: String,
+    resolutionNote: String,
+    updated: { type: Boolean, default: false, index: true }, // Indexado para fila de processamento
+    // --------------------------------
+
     detail: {
         activity_id: String,
         activity_status_name: String,

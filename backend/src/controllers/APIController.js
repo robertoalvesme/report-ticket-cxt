@@ -149,6 +149,8 @@ class APIController {
             return res.status(500).json({ error: 'Erro interno.' });
         }
     }
+
+
 }
 
 module.exports = new APIController();

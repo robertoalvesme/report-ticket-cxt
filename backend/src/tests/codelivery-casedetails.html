@@ -1,0 +1,500 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head id="Head1"><meta http-equiv="Pragma" content="no-cache" /><meta http-equiv="Cache-Control" content="no-cache,no-Store" /><title>
+	Siebel SR Details
+</title><link href="/akuar.css?v=1.1" rel="stylesheet" type="text/css" />
+        <script language="javascript" type="text/javascript">
+            function CheckGoButton() {
+                var ddlLinks = document.getElementById("ddlLinks");
+                var tdGo = document.getElementById("tdGo");
+                var sSr;
+                var sHandle;
+                var sSiteName;
+                var sInSupportOfName;
+
+                if (document.getElementById("lSRNumber1").textContent != undefined) {
+                    sSr = document.getElementById("lSRNumber1").textContent;
+                } else if (document.getElementById("lSRNumber1").innerText != undefined) {
+                    sSr = document.getElementById("lSRNumber1").innerText;
+                } else {
+                    sSr = document.getElementById("lSRNumber1").innerHTML;
+                }
+
+                if (document.getElementById("lAssignedTo").textContent != undefined) {
+                    sHandle = document.getElementById("lAssignedTo").textContent;
+                } else if (document.getElementById("lAssignedTo").innerText != undefined) {
+                    sHandle = document.getElementById("lAssignedTo").innerText;
+                } else {
+                    sHandle = document.getElementById("lAssignedTo").innerHTML;
+                }
+
+                if (document.getElementById("lSiteName").textContent != undefined) {
+                    sSiteName = document.getElementById("lSiteName").textContent;
+                } else if (document.getElementById("lSiteName").innerText != undefined) {
+                    sSiteName = document.getElementById("lSiteName").innerText;
+                } else {
+                    sSiteName = document.getElementById("lSiteName").innerHTML;
+                }
+
+                if (document.getElementById("lInSupportOfName").textContent != undefined) {
+                    sInSupportOfName = document.getElementById("lInSupportOfName").textContent;
+                } else if (document.getElementById("lInSupportOfName").innerText != undefined) {
+                    sInSupportOfName = document.getElementById("lInSupportOfName").innerText;
+                } else {
+                    sInSupportOfName = document.getElementById("lInSupportOfName").innerHTML;
+                }
+                if (sInSupportOfName != "") {
+                    sInSupportOfName = " (" + sInSupportOfName + ")";
+                }
+
+                if (ddlLinks.value == "I want to...") {
+                    tdGo.innerHTML = "";
+                } else if (ddlLinks.value == "View Audit Trail") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/siebelreports/audittrail.aspx?sr_num=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "View CSAT Survey Results") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/customersat/surveydetails.aspx?case_id=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "View SR Owner Escalation Path") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/details/EscalationPath.aspx?handle=" + sHandle + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Email SR Owner") {
+                    tdGo.innerHTML = "<img src='../images/go_button.png' alt='' onclick=window.open('/utils/emailform.aspx?type=so&case_id=" + sSr + "','email','resizable=1,scrollbars=1,height=450,width=525'); />";
+                } else if (ddlLinks.value == "Provide Feedback on Dispatch SR") {
+                    tdGo.innerHTML = "<a id='aGo' href='/reportadmin/srfeedback.aspx?sr_num=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Perform CIQ Review") {
+                    tdGo.innerHTML = "<a id='aGo' href='" + document.getElementById("hfCiqUrl").value + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Add to Executive Notification" || ddlLinks.value == "Edit Executive Notification") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/reportadmin/srexecnotification.aspx?sr_num=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Email Account Team") {
+                    tdGo.innerHTML = "<img src='../images/go_button.png' alt='' onclick=window.open('/utils/emailform.aspx?type=at&case_id=" + sSr + "','email','resizable=1,scrollbars=1,height=450,width=525'); />";
+                    //} else if (ddlLinks.value == "Initiate Entitlement Escalation") {
+                    //    tdGo.innerHTML = "<img src='../images/go_button.png' alt='' onclick=window.open('/utils/emailform.aspx?type=ede&case_id=" + sSr + "','email','resizable=1,scrollbars=1,height=450,width=525'); />";
+                    //} else if (ddlLinks.value == "Find Entitlement Escalation Approver") {
+                    //    tdGo.innerHTML = "<a id='aGo' href='/utils/findapprover.aspx?sr_num=" + sSr + "' target='_blank'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Report GSS tools usage on this SR") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/reportadmin/toolsusage.aspx?sr_num=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                } else if (ddlLinks.value == "Validate Entitlements") {
+                    tdGo.innerHTML = "<a id='aGo' href='https://report.avaya.com/siebelreports/fourpointentitlementvalidation.aspx?sr_num=" + sSr + "' target='_self'><img src='../images/go_button.png' alt='' /></a>";
+                }
+            }
+
+            function Load() {
+                document.getElementById("ddlLinks").selectedIndex = 0;
+            }
+
+            function AiLink() {
+                if (confirm("You are now leaving report.avaya.com and being sent to a separate application - SDTOOLS. Any questions or problems should be directed to admin group AVA-GSD-EU-SUPPORT-FASTNAV at servicestools@avaya.com and not report.avaya.com.\n\nDo you want to continue?")) {
+                    //window.location.href = "https://sdtools.avaya.com/ai/?ticket=" + document.getElementById("lSRNumber1").innerHTML; + "&task=ai_insights&utm_source=opssuite";
+                    window.open("https://sdtools.avaya.com/ai/?ticket=" + document.getElementById("lSRNumber1").innerHTML + "&task=ai_insights&utm_source=opssuite")
+                }
+            }
+
+            window.addEventListener ?
+            window.addEventListener("load", Load(), false) :
+            window.attachEvent && window.attachEvent("onload", Load());
+        </script>
+        <script language="javascript" type="text/javascript" src="JScript.js">
+            if (top.frames.length != 0)
+            top.location = self.document.location;   
+        </script>
+    </head>
+    <body onunload="">
+        <form method="post" action="./casedetails.aspx?case_id=1-23450643412" id="form1">
+<div class="aspNetHidden">
+<input type="hidden" name="__EVENTTARGET" id="__EVENTTARGET" value="" />
+<input type="hidden" name="__EVENTARGUMENT" id="__EVENTARGUMENT" value="" />
+<input type="hidden" name="__LASTFOCUS" id="__LASTFOCUS" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUJOTA0NDk2NTUzD2QWAgIDD2QWAgIbD2QWCmYPZBYCZg9kFgJmD2QWBGYPZBYCZg9kFgICAQ8PFgIeBFRleHQFDTEtMjM0NTA2NDM0MTJkZAIBD2QWAgIBD2QWAmYPEGQQFQsMSSB3YW50IHRvLi4uEFZpZXcgQXVkaXQgVHJhaWwYVmlldyBDU0FUIFN1cnZleSBSZXN1bHRzHVZpZXcgU1IgT3duZXIgRXNjYWxhdGlvbiBQYXRoDkVtYWlsIFNSIE93bmVyH1Byb3ZpZGUgRmVlZGJhY2sgb24gRGlzcGF0Y2ggU1ISUGVyZm9ybSBDSVEgUmV2aWV3HUFkZCB0byBFeGVjdXRpdmUgTm90aWZpY2F0aW9uEkVtYWlsIEFjY291bnQgVGVhbSFSZXBvcnQgR1NTIHRvb2xzIHVzYWdlIG9uIHRoaXMgU1IVVmFsaWRhdGUgRW50aXRsZW1lbnRzFQsMSSB3YW50IHRvLi4uEFZpZXcgQXVkaXQgVHJhaWwYVmlldyBDU0FUIFN1cnZleSBSZXN1bHRzHVZpZXcgU1IgT3duZXIgRXNjYWxhdGlvbiBQYXRoDkVtYWlsIFNSIE93bmVyH1Byb3ZpZGUgRmVlZGJhY2sgb24gRGlzcGF0Y2ggU1ISUGVyZm9ybSBDSVEgUmV2aWV3HUFkZCB0byBFeGVjdXRpdmUgTm90aWZpY2F0aW9uEkVtYWlsIEFjY291bnQgVGVhbSFSZXBvcnQgR1NTIHRvb2xzIHVzYWdlIG9uIHRoaXMgU1IVVmFsaWRhdGUgRW50aXRsZW1lbnRzFCsDC2dnZ2dnZ2dnZ2dnZGQCAQ9kFgJmD2QWAmYPZBZkZg9kFgQCAQ9kFgJmDw8WAh8ABWA8YSBocmVmPScvc2llYmVscmVwb3J0cy9lbXBsb3llZWRyaWxsLmFzcHg/VXNlckhhbmRsZT1GVEhFTFBERVNLJyB0YXJnZXQ9J19ibGFuayc+RlRIRUxQREVTSzwvYT5kZAIDD2QWAmYPDxYCHwAFZjxhIGhyZWY9Jy9zaWViZWxyZXBvcnRzL2VtcGxveWVlZHJpbGwuYXNweD9Vc2VySGFuZGxlPVVDX0JCX1NVUFBPUlQnIHRhcmdldD0nX2JsYW5rJz5VQ19CQl9TVVBQT1JUPC9hPmRkAgEPZBYEAgEPZBYC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ZBYCZg8PFgQfAAUUcnNoaW5kZUBhbHlvdXN1Zi5jb20fAQVYaHR0cHM6Ly9yZXBvcnQuYXZheWEuY29tL3NpZWJlbHJlcG9ydHMvY29udGFjdGRyaWxsLmFzcHg/ZW1haWxvcnNzbz1yc2hpbmRlQGFseW91c3VmLmNvbWRkAgUPZBYCAgEPZBYCZg8PFgIfAAUHRW5nbGlzaGRkAgYPZBYCAgEPZBYCZg8PFgIfAAVsPGEgaHJlZj0naHR0cHM6Ly9yZXBvcnQuYXZheWEuY29tL3NpZWJlbHJlcG9ydHMvY29udGFjdGRyaWxsLmFzcHg/ZW1haWxvcnNzbz1TSElOREU0NCc+U0hJTkRFNDQ8L2E+IChBQ1RJVkUpZGQCBw9kFgICAQ9kFgJmDw8WAh8ABY8BWWVzIDxhIGhyZWY9J2h0dHA6Ly9yZXBvcnQuYXZheWEuY29tL3NpZWJlbHJlcG9ydHMvY29udGFjdGNlcnRicC5hc3B4P3NyX251bT0xLTIzNDUwNjQzNDEyJnVzZXI9MS1WRjNaNi0xJz52aWV3IGNlcnRpZmllZCBjb250YWN0cyB1bmRlciBCUDwvYT5kZBgBBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WAQUOY2JDdXN0b21lclRpbWWNzXNk4YOnjd8e3PHcKZCdt3IVpyfRBFa3dAKSYNmTpw==" />
+</div>
+
+<script type="text/javascript">
+//<![CDATA[
+var theForm = document.forms['form1'];
+if (!theForm) {
+    theForm = document.form1;
+}
+function __doPostBack(eventTarget, eventArgument) {
+    if (!theForm.onsubmit || (theForm.onsubmit() != false)) {
+        theForm.__EVENTTARGET.value = eventTarget;
+        theForm.__EVENTARGUMENT.value = eventArgument;
+        theForm.submit();
+    }
+}
+//]]>
+</script>
+
+
+<div class="aspNetHidden">
+
+	<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="E61AB192" />
+	<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEdABqJGxIsCAi+cWHtAsukYbiGgrj7sQuUy/63TMt1eAVYOflFm4c8Ous9a8LqyDv+Fd3DLMHHhFtbipA5Qyb+xYqDy9ZIy3AGuCNHwkEj6aEKcnqoObdIAPdcTRTsXOXIz8wH1899jvy3S5agimJ5P6WXpGSwxvG7mKTsqSHEVsZfYaOOZ+ArBsN4Ok56pyrQKJcVY36tZz+uv71TQjGfc+Jk69HLtxjIZmQn0V1YOMOj9fhbR6yBT5K+hCrix+CTolT8veFodBw4MJbrAZ3oV5sXiRfTU58Q+GrPp9MeUmzzojEcH4KEBswlH0NR4ALyCo3Tc+cT1hnr4HLhFS++K7cTtPDFZYFgJ1nwvWpBtBvyVSrStjkqEzWtZ/RoPze2X2Bl4B3qp0NZoucnRCW+E9wPpvGsooxszAvcQQrv3fNz4izrsauwF5NFG92sqVROiokFczH91w59vmTYZkrUzBsaS9vt8njR0s3DVa6dFTS5sPITKXgAMnyXxwcmwWiG3L56yRS2aIBJigES8OWDOIUxeLDGQLPZSTaxOxhLO2BfkQYTDudXIMOv+aAuvahYOx44dZXhxvVd9fKAY7vbTLnL" />
+</div>
+            <div>
+                <input type="hidden" name="hfCiqUrl" id="hfCiqUrl" value="/ciq/ocr.aspx?srnum=1-23450643412&amp;actnum=0&amp;act=score&amp;type=adhoc" />
+                <input type="hidden" name="conreftoggle" id="conreftoggle" />
+                <input type="hidden" name="admtoggle" id="admtoggle" />
+                <input type="hidden" name="inquiratoggle" id="inquiratoggle" />
+                <input type="hidden" name="srtoggle" id="srtoggle" />
+                <input type="hidden" name="attachmenttoggle" id="attachmenttoggle" />
+                <input type="hidden" name="specialtoggle" id="specialtoggle" />
+                <input type="hidden" name="partstoggle" id="partstoggle" />
+                <input type="hidden" name="disppartstoggle" id="disppartstoggle" />
+                <input type="hidden" name="serviceorderstoggle" id="serviceorderstoggle" />
+                <input type="hidden" name="childsrtoggle" id="childsrtoggle" />
+                <input type="hidden" name="parentsrtoggle" id="parentsrtoggle" />
+                <input type="hidden" name="qualityalertstoggle" id="qualityalertstoggle" />           
+
+                <table id="tPage" class="blacktext" cellspacing="1" cellpadding="1" style="border-width:2px;border-style:Solid;width:902px;max-width: 902px;min-width: 902px">
+	<tr class="headRowV3">
+		<td><table cellspacing="0" cellpadding="0" style="width:100%;border-collapse:collapse;">
+			<tr>
+				<td colspan="3" style="font-size:Large;"><span id="Title">Detailed SR Report For </span><span id="lSRNumber1">1-23450643412</span>&nbsp;&nbsp;
+                                        <a style="font-size:8pt; background-color:#FFF05D; color:#663300; font-weight:bold; text-decoration:underline; cursor:pointer" onclick="AiLink();">Click here for AI Insights</a>
+                                    </td>
+			</tr><tr>
+				<td style="width:50%;"><span class="headRowV3"><input id="cbCustomerTime" type="checkbox" name="cbCustomerTime" onclick="javascript:setTimeout(&#39;__doPostBack(\&#39;cbCustomerTime\&#39;,\&#39;\&#39;)&#39;, 0)" /><label for="cbCustomerTime">Show dates in customer time</label></span></td><td align="right" valign="middle" style="width:50%;"><select name="ddlLinks" id="ddlLinks" class="blacktext" onchange="CheckGoButton();">
+					<option value="I want to...">I want to...</option>
+					<option value="View Audit Trail">View Audit Trail</option>
+					<option value="View CSAT Survey Results">View CSAT Survey Results</option>
+					<option value="View SR Owner Escalation Path">View SR Owner Escalation Path</option>
+					<option value="Email SR Owner">Email SR Owner</option>
+					<option value="Provide Feedback on Dispatch SR">Provide Feedback on Dispatch SR</option>
+					<option value="Perform CIQ Review">Perform CIQ Review</option>
+					<option value="Add to Executive Notification">Add to Executive Notification</option>
+					<option value="Email Account Team">Email Account Team</option>
+					<option value="Report GSS tools usage on this SR">Report GSS tools usage on this SR</option>
+					<option value="Validate Entitlements">Validate Entitlements</option>
+
+				</select></td><td id="tdGo" align="right" valign="bottom" style="width:26px;"></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tDetails" style="width:900px;">
+			<tr>
+				<td valign="top" style="width:25%;"><span id="CreatedBy" class="blacktext" style="font-weight:bold;">Created By</span></td><td valign="top" style="width:25%;"><span id="lCreatedBy" class="blacktext"><a href='/siebelreports/employeedrill.aspx?UserHandle=FTHELPDESK' target='_blank'>FTHELPDESK</a></span></td><td valign="top" style="width:25%;"><span id="CaseOwner" class="blacktext" style="font-weight:bold;">SR Owner</span></td><td valign="top" style="width:25%;"><span id="lAssignedTo" class="blacktext"><a href='/siebelreports/employeedrill.aspx?UserHandle=UC_BB_SUPPORT' target='_blank'>UC_BB_SUPPORT</a></span><br />
+                                    </td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SystemSourceID" class="blacktext" style="font-weight:bold;">System Source ID</span></td><td valign="top" style="width:25%;"><span id="lSystemSourceID" class="blacktext">TANGO</span></td><td valign="top" style="width:25%;"><span id="Capsule" class="blacktext" style="font-weight:bold;">Capsule Team</span></td><td valign="top" style="width:25%;"><span id="lCapsule" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="LastUpdate" class="blacktext" style="font-weight:bold;">Last Updated</span></td><td valign="top" style="width:25%;"><span id="lLastUpdate" class="blacktext">2/6/2026 7:14:49 AM</span></td><td valign="top" style="width:25%;"><span id="HoursBooked" class="blacktext" style="font-weight:bold;">Hrs Booked</span></td><td valign="top" style="width:25%;"><a id="hlHoursBooked" class="blacktext" href="/details/hoursbreakdown.aspx?caseid=1-23450643412">0.5</a></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="LastUpdatedBy" class="blacktext" style="font-weight:bold;">Last Updated By</span></td><td valign="top" style="width:25%;"><span id="lLastUpdatedBy" class="blacktext">SADMIN</span></td><td valign="top" style="width:25%;"><span id="NumMeas" class="blacktext" style="font-weight:bold;"># of MEAs</span></td><td valign="top" style="width:25%;"><span id="lNumMeas" class="blacktext">0</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="LastCustStatus" class="blacktext" style="font-weight:bold;">Last Cust Status</span></td><td valign="top" style="width:25%;"><span id="lLastCustStatus" class="blacktext">2/6/2026 7:13:25 AM</span></td><td valign="top" style="width:25%;"><span id="OpenQualityAlerts" class="blacktext" style="font-weight:bold;"># of Active QAs</span></td><td valign="top" style="width:25%;"><span id="lOpenQualityAlerts" class="blacktext" onclick="javascript:window.location.hash = &quot;tQualityAlerts&quot;;">0</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="NextStatusDue" class="blacktext" style="font-weight:bold;">Next Status Due</span></td><td valign="top" style="width:25%;"><span id="lNextStatusDue" class="blacktext">2/10/2026 7:12:17 AM</span></td><td valign="top" style="width:25%;"><span id="NumServiceRecs" class="blacktext" style="font-weight:bold;"># of Svc Opps</span></td><td valign="top" style="width:25%;"><a id="hlNumServiceRecs" class="blacktext" href="/siebelreports/servicerecommendations.aspx?site_id=0052003710">0</a></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SrAge" class="blacktext" style="font-weight:bold;">SR Age (days)</span></td><td valign="top" style="width:25%;"><span id="lSrAge" class="blacktext">0.12</span></td><td valign="top" style="width:25%;"><span id="OpenCaps" class="blacktext" style="font-weight:bold;">Related to CAP</span></td><td valign="top" style="width:25%;"><span id="lOpenCaps" class="blacktext">N</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="ExpertAttempts" class="blacktext" style="font-weight:bold;">Expert Attempts</span></td><td valign="top" style="width:25%;"><span id="lExpertAttempts" class="blacktext">0</span></td><td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Account" class="blacktext" style="font-weight:bold;">Account</span></td><td valign="top" style="width:25%;"><span id="lSiteName" class="blacktext">Future Technology LLC</span></td><td valign="top" rowspan="4" style="width:25%;"><span id="FLAddress" class="blacktext" style="font-weight:bold;">Site Address</span></td><td valign="top" style="width:25%;"><span id="lFLAddress" class="blacktext">P.O.Box 25, Mezzanine Floor, Al Yousuf Building</span></td>
+			</tr><tr>
+				<td valign="top" rowspan="3" style="width:25%;"><span id="Site" class="blacktext" style="font-weight:bold;">Site</span></td><td valign="top" rowspan="3" style="width:25%;"><span id="lFLCode" class="blacktext"><a href='/siebelreports/fldrill.aspx?site_id=0050004688' target='_blank'>0050004688</a><br /><a href='/siebelreports/flassets.aspx?fl=0050004688' target='_blank'>Assets by Product</a><br /><a href='/siebelreports/flentitlements.aspx?fl=0050004688' target='_blank'>Agreements</a><br /><a href='/siebelreports/flcontacts.aspx?fl=0050004688' target='_blank'>Contacts</a></span></td><td valign="top" style="width:25%;"><span id="lFLCityStateZip" class="blacktext">Dubai,  25</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="lFLCountry" class="blacktext">Utd.Arab Emir.</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;">&nbsp;</td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="CustomerTime" class="blacktext" style="font-weight:bold;">Current Site Time</span></td><td valign="top" style="width:25%;"><span id="lCustomerTime" class="blacktext">2/6/2026 12:57:53 PM</span></td><td valign="top" style="width:25%;"><span id="ParentId" class="blacktext" style="font-weight:bold;">Parent ID</span></td><td valign="top" style="width:25%;"><span id="lParentId" class="blacktext"><a href='/siebelreports/fldrill.aspx?parent_id=7778334716' target='_blank'>7778334716</a></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="TimeOffset" class="blacktext" style="font-weight:bold;">UTC Offset</span></td><td valign="top" style="width:25%;"><span id="lTimeOffset" class="blacktext">3 hours</span></td><td valign="top" style="width:25%;"><span id="ParentName" class="blacktext" style="font-weight:bold;">Parent Name</span></td><td valign="top" style="width:25%;"><span id="lParentName" class="blacktext">FUTURE TECHNOLOGY L.L.C.</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="CustomerSegment" class="blacktext" style="font-weight:bold;">Segment</span></td><td valign="top" style="width:25%;"><span id="lCustSeg" class="blacktext">Member</span></td><td valign="top" style="width:25%;"><span id="InSupportOfSite" class="blacktext" style="font-weight:bold;">In Support of Site</span></td><td valign="top" style="width:25%;"><span id="lInSupportOfSite" class="blacktext"><a href='/siebelreports/fldrill.aspx?site_id=0052003710' target='_blank'>0052003710</a></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SecurityRestricted" class="blacktext" style="font-weight:bold;">Security Restricted</span></td><td valign="top" style="width:25%;"><span id="lSecurityRestricted" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="InSupportOfName" class="blacktext" style="font-weight:bold;">In Support of Name</span></td><td valign="top" style="width:25%;"><span id="lInSupportOfName" class="blacktext">National Petroleum Construction Com</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="DataSecurityCompliance" class="blacktext" style="font-weight:bold;">Data Security Comply</span></td><td valign="top" style="width:25%;"><span id="lDataSecurityCompliance" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="CustomerAlias" class="blacktext" style="font-weight:bold;">Customer Alias</span></td><td valign="top" style="width:25%;"><span id="lCustomerAlias" class="blacktext">NATIONAL PETROLEUM CONSTRUCTION COM</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="AosSite" class="blacktext" style="font-weight:bold;">APCS Customer</span></td><td valign="top" style="width:25%;"><span id="lAosSite" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="CustomerAliasTier" class="blacktext" style="font-weight:bold;">Customer Alias Tier</span></td><td valign="top" style="width:25%;"><span id="lCustomerAliasTier" class="blacktext">Global Support</span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" colspan="3" style="width:75%;"><span id="SdmName" class="blacktext" style="font-weight:bold;">SDM Name</span></td><td valign="top" style="width:25%;"><span id="lSdmName" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" colspan="3" style="width:75%;"><span id="SfdcName" class="blacktext" style="font-weight:bold;">SFDC Sales Contact</span></td><td valign="top" style="width:25%;"><span id="lSfdcName" class="blacktext">Kareem Nabil Ebaid</span></td>
+			</tr><tr>
+				<td valign="top" colspan="3" style="width:75%;"><span id="CsmName" class="blacktext" style="font-weight:bold;">CSM/Renewal Specialist (from SFDC)</span></td><td valign="top" style="width:25%;"><span id="lCsmName" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" colspan="3" style="width:75%;"><span id="CamName" class="blacktext" style="font-weight:bold;">Channel Account Manager (CAM)</span></td><td valign="top" style="width:25%;"><span id="lCamName" class="blacktext">NOURA ALKHANBASHI</span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SLA" class="blacktext" style="font-weight:bold;">SLA</span></td><td valign="top" style="width:25%;"><span id="lSLA" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="CriticalSite" class="blacktext" style="font-weight:bold;">Critical Site</span></td><td valign="top" style="width:25%;"><span id="lCriticalSite" class="blacktext">N</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SLAStatus" class="blacktext" style="font-weight:bold;">SLA Status</span></td><td valign="top" style="width:25%;"><span id="lSLAStatus" class="blacktext">0</span></td><td valign="top" style="width:25%;"><span id="PrimarySite" class="blacktext" style="font-weight:bold;">Primary Site</span></td><td valign="top" style="width:25%;"><span id="lPrimarySite" class="blacktext">N</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="FirstResponder" class="blacktext" style="font-weight:bold;">First Responder</span></td><td valign="top" style="width:25%;"><span id="lFirstResponder" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="SPOC" class="blacktext" style="font-weight:bold;">SPOC</span></td><td valign="top" style="width:25%;"><span id="lSPOC" class="blacktext">N</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Top5Account" class="blacktext" style="font-weight:bold;">Top 5 Account</span></td><td valign="top" style="width:25%;"><span id="lTop5Account" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="CustTicketNum" class="blacktext" style="font-weight:bold;">Customer Ticket #</span></td><td valign="top" style="width:25%;"><span id="lCustTicketNum" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="CreditRisk" class="blacktext" style="font-weight:bold;">Credit Risk</span></td><td valign="top" style="width:25%;"><span id="lCreditRisk" class="blacktext">N</span></td><td valign="top" style="width:25%;"><span id="VendTicketNum" class="blacktext" style="font-weight:bold;">Vendor Ticket #</span></td><td valign="top" style="width:25%;"><span id="lVendTicketNum" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"><span id="VendTicketName" class="blacktext" style="font-weight:bold;">Vendor Name</span></td><td valign="top" style="width:25%;"><span id="lVendTicketName" class="blacktext"></span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Product" class="blacktext" style="font-weight:bold;">Product</span></td><td valign="top" style="width:25%;"><span id="lProduct" class="blacktext"><a href='/siebelreports/assetdetails.aspx?asset=1-56836792-6520' target='_blank'>AV VNTG K175 W/CAM W/WRLS</a></span></td><td valign="top" style="width:25%;"><span id="OpSkill" class="blacktext" style="font-weight:bold;">Operational Skill</span></td><td valign="top" style="width:25%;"><span id="lOpSkill" class="blacktext">IP EndPoints</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SpecialRouting" class="blacktext" style="font-weight:bold;">Special Routing</span></td><td valign="top" style="width:25%;"><span id="lSpecialRouting" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="SRRelease" class="blacktext" style="font-weight:bold;">SR Release</span></td><td valign="top" style="width:25%;"><span id="lSRRelease" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SRVersion" class="blacktext" style="font-weight:bold;">SR Version</span></td><td valign="top" style="width:25%;"><span id="lSRVersion" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="SECode" class="blacktext" style="font-weight:bold;">SE Code</span></td><td valign="top" style="width:25%;"><span id="lSECode" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SEID" class="blacktext" style="font-weight:bold;">SEID</span></td><td valign="top" style="width:25%;"><span id="lSEID" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="AssetSubscription" class="blacktext" style="font-weight:bold;">Asset Subscription</span></td><td valign="top" style="width:25%;"><span id="lAssetSubscription" class="blacktext"></span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td class="blacktext" align="center" colspan="4" style="font-weight:bold;">Agreement/Entitlement information is based on when the SR is created</td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="AgreeNum" class="blacktext" style="font-weight:bold;">Agreement #</span></td><td valign="top" style="width:25%;"><span id="lAgreeNum" class="blacktext"><a href='assetagree.aspx?fl=0050004688&agree_num=1-58245293-219&ent_type=LOOKUP' target='_blank'>1-58245293-219</a></span></td><td valign="top" style="width:25%;"><span id="EntName" class="blacktext" style="font-weight:bold;">Entitlement Name</span></td><td valign="top" style="width:25%;"><span id="lEntName" class="blacktext">FAULT MANAGEMENT</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="AgreeName" class="blacktext" style="font-weight:bold;">Agreement Name</span></td><td valign="top" style="width:25%;"><span id="lAgreeName" class="blacktext">SA SW PREFERRED+UA C/D</span></td><td valign="top" style="width:25%;"><span id="EntType" class="blacktext" style="font-weight:bold;">Entitlement Type</span></td><td valign="top" style="width:25%;"><span id="lEntType" class="blacktext">REMOTE SUPPORT</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="AgreeCode" class="blacktext" style="font-weight:bold;">Agreement Code</span></td><td valign="top" style="width:25%;"><span id="lAgreeCode" class="blacktext">TERM</span></td><td valign="top" style="width:25%;"><span id="EntStartDate" class="blacktext" style="font-weight:bold;">Start Date</span></td><td valign="top" style="width:25%;"><span id="lEntStartDate" class="blacktext">6/25/2025 12:00:00 AM</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="AgreeStatus" class="blacktext" style="font-weight:bold;">Agreement Status</span></td><td valign="top" style="width:25%;"><span id="lAgreeStatus" class="blacktext">ACTIVE</span></td><td valign="top" style="width:25%;"><span id="EntEndDate" class="blacktext" style="font-weight:bold;">End Date</span></td><td valign="top" style="width:25%;"><span id="lEntEndDate" class="blacktext">6/26/2026 11:59:59 PM</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SrvHrs" class="blacktext" style="font-weight:bold;">Service Hours</span></td><td valign="top" style="width:25%;"><span id="lSrvHrs" class="blacktext">24x7</span></td><td valign="top" style="width:25%;"><span id="EntStatus" class="blacktext" style="font-weight:bold;">Entitlement Status</span></td><td valign="top" style="width:25%;"><span id="lEntStatus" class="blacktext">ACTIVE</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="CoDelivery" class="blacktext" style="font-weight:bold;">Co-Delivery Indicator</span></td><td valign="top" style="width:25%;"><span id="lCoDelivery" class="blacktext">Y</span></td><td valign="top" style="width:25%;"><span id="Billable" class="blacktext" style="font-weight:bold;">Billable</span></td><td valign="top" style="width:25%;"><span id="lBillable" class="blacktext">N</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"><span id="Override" class="blacktext" style="font-weight:bold;">Override</span></td><td valign="top" style="width:25%;"><span id="lOverride" class="blacktext">N</span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td class="blacktext" align="center" colspan="4" style="font-weight:bold;">All dates are in <span id="lTimeZone" class="blacktext" style="font-weight:bold;">GMT</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="DateCreated" class="blacktext" style="font-weight:bold;">Date Created</span></td><td valign="top" style="width:25%;"><span id="lDateCreated" class="blacktext">2/6/2026 7:05:48 AM</span></td><td valign="top" style="width:25%;"><span id="DateResolved" class="blacktext" style="font-weight:bold;">Date Resolved</span></td><td valign="top" style="width:25%;"><span id="lDateResolved" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="DateRestored" class="blacktext" style="font-weight:bold;">Date Restored</span></td><td valign="top" style="width:25%;"><span id="lDateRestored" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="DateClosed" class="blacktext" style="font-weight:bold;">Date Closed</span></td><td valign="top" style="width:25%;"><span id="lDateClosed" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="RespondCommitTime" class="blacktext" style="font-weight:bold;">Respond Commit Time</span></td><td valign="top" style="width:25%;"><span id="lRespondCommitTime" class="blacktext">2/10/2026 7:05:48 AM</span></td><td valign="top" style="width:25%;"><span id="CDRI" class="blacktext" style="font-weight:bold;">CDRI</span></td><td valign="top" style="width:25%;"><span id="lCDRI" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="ResolveCommitTime" class="blacktext" style="font-weight:bold;">Resolve Commit Time</span></td><td valign="top" style="width:25%;"><span id="lResolveCommitTime" class="blacktext">2/13/2026 10:05:48 AM</span></td><td valign="top" style="width:25%;"><span id="AssignmentTime" class="blacktext" style="font-weight:bold;">Assignment Time</span></td><td valign="top" style="width:25%;"><span id="lAssignmentTime" class="blacktext">2/6/2026 7:05:48 AM</span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Blank3" class="blacktext" style="font-weight:bold;">Source</span></td><td valign="top" style="width:25%;"><span id="lSource" class="blacktext">Web</span></td><td valign="top" style="width:25%;"><span id="Severity" class="blacktext" style="font-weight:bold;">Severity</span></td><td valign="top" style="width:25%;"><span id="lSeverity" class="blacktext">Business Impact</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Blank4" class="blacktext" style="font-weight:bold;">Type</span></td><td valign="top" style="width:25%;"><span id="lType" class="blacktext">Break/Fix</span></td><td valign="top" style="width:25%;"><span id="OrigSeverity" class="blacktext" style="font-weight:bold;">Original Severity</span></td><td valign="top" style="width:25%;"><span id="lOrigSeverity" class="blacktext">Business Impact</span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="SubType" class="blacktext" style="font-weight:bold;">Service Action</span></td><td valign="top" style="width:25%;"><span id="lSubType" class="blacktext">Fault Management</span></td><td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Status" class="blacktext" style="font-weight:bold;">Status</span></td><td valign="top" style="width:25%;"><span id="lStatus" class="blacktext">Assigned</span></td><td valign="top" style="width:25%;"><span id="SubStatus" class="blacktext" style="font-weight:bold;">Sub Status</span></td><td valign="top" style="width:25%;"><span id="lSubStatus" class="blacktext">Backbone</span></td>
+			</tr><tr>
+				<td colspan="4"><hr /></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="ResolutionAction" class="blacktext" style="font-weight:bold;">Resolution Action</span></td><td valign="top" style="width:25%;"><span id="lResolutionAction" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="SpecEvent" class="blacktext" style="font-weight:bold;">Spec Event</span></td><td valign="top" style="width:25%;"><span id="lSpecEvent" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="ResolutionDetail" class="blacktext" style="font-weight:bold;">Resolution Detail</span></td><td valign="top" style="width:25%;"><span id="lResolutionDetail" class="blacktext"></span></td><td valign="top" style="width:25%;"><span id="SrFeedback" class="blacktext" style="font-weight:bold;">SR Feedback</span></td><td valign="top" style="width:25%;"><span id="lSrFeedback" class="blacktext"></span></td>
+			</tr><tr>
+				<td valign="top" style="width:25%;"><span id="Cause" class="blacktext" style="font-weight:bold;">Cause</span></td><td valign="top" style="width:25%;"><span id="lCause" class="blacktext"></span></td><td valign="top" style="width:25%;"></td><td valign="top" style="width:25%;"></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><hr /></td>
+	</tr><tr>
+		<td><table style="width:900px;">
+			<tr>
+				<td valign="top" style="width:25%;"><span class="blacktext" style="font-weight:bold;">SR Desc</span></td><td align="left" valign="top" style="width:75%;"><span id="lCASEDESCRIPTION" class="blacktext">The Vantage phone's Bluetooth handset is getting disconnected continuously</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><hr /></td>
+	</tr><tr>
+		<td><table style="width:900px;">
+			<tr>
+				<td valign="top" style="width:25%;"><span class="blacktext" style="font-weight:bold;">SR Resolution Note</span></td><td align="left" valign="top" style="width:75%;"><span id="lResNote" class="blacktext"></span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><hr /></td>
+	</tr><tr>
+		<td><table style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="2"><span class="blacktext" style="color:White;font-weight:bold;">SR Contact</span></td><td colspan="2"><span class="blacktext" style="color:White;font-weight:bold;">Completed To</span></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">Name</span></td><td><span id="lReportedByName" class="blacktext">rahul shinde</span></td><td><span class="blacktext" style="font-weight:bold;">Name</span></td><td><span id="lCompletedToName" class="blacktext"></span></td>
+			</tr><tr>
+				<td><span id="ReportedByBpLinkId" class="blacktext" style="font-weight:bold;">BP Link ID</span></td><td><span id="lReportedByBpLinkId" class="blacktext">28069</span></td><td><span id="CompletedToPhone" class="blacktext" style="font-weight:bold;">Phone</span></td><td><span id="lCompletedToPhone" class="blacktext"></span></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">Phone</span></td><td><span id="lReportedByPhone" class="blacktext">971545788584</span></td><td><span id="CompletedToEmail" class="blacktext" style="font-weight:bold;">Email</span></td><td><a id="hlCompletedToEmail" class="blacktext"></a></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">Email</span></td><td><a id="hlReportedByEmail" class="blacktext" href="https://report.avaya.com/siebelreports/contactdrill.aspx?emailorsso=rshinde@alyousuf.com">rshinde@alyousuf.com</a></td><td></td><td></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">Pref Language</span></td><td><span id="lReportedByPrefLang" class="blacktext">English</span></td><td><span class="blacktext" style="font-weight:bold;"></span></td><td><span class="blacktext"></span></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">SSO Login</span></td><td><span id="lReportedByCxpLogin" class="blacktext"><a href='https://report.avaya.com/siebelreports/contactdrill.aspx?emailorsso=SHINDE44'>SHINDE44</a> (ACTIVE)</span></td><td></td><td></td>
+			</tr><tr>
+				<td><span class="blacktext" style="font-weight:bold;">Co-Delivery Certification</span></td><td><span id="lReportedByHasCert" class="blacktext">Yes <a href='http://report.avaya.com/siebelreports/contactcertbp.aspx?sr_num=1-23450643412&user=1-VF3Z6-1'>view certified contacts under BP</a></span></td><td></td><td></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tConrefEntries" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="5"><span class="blacktext" style="color:White;font-weight:bold;">Conref Entries</span>&nbsp;&nbsp;<a id="conrefexpandall" class="blacktext" href="javascript:openall(&#39;conref&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Type</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Owner</span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;conrefnotetable2note2&#39;);"><img id="conrefnotetable2note2im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td>AM</td><td><a href='employeedrill.aspx?userhandle=WANG796'>WANG796</a></td><td>2/6/2026 7:14:49 AM</td><td><a href='employeedrill.aspx?userhandle=UC_BB_SUPPORT'>UC_BB_SUPPORT</a></td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="5"><span id="conrefnotetable2note2span" style="display:none;"><pre>Owner</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;conrefnotetable2note3&#39;);"><img id="conrefnotetable2note3im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td>WM</td><td><a href='employeedrill.aspx?userhandle=OCDSIEBEL'>OCDSIEBEL</a></td><td>2/6/2026 7:07:33 AM</td><td><a href='employeedrill.aspx?userhandle=WANG796'>WANG796</a></td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="5"><span id="conrefnotetable2note3span" style="display:none;"><pre>Owner</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;conrefnotetable2note1&#39;);"><img id="conrefnotetable2note1im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td>AM</td><td></td><td>2/6/2026 7:05:56 AM</td><td><a href='employeedrill.aspx?userhandle=CXT_GLOBAL'>CXT_GLOBAL</a></td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="5"><span id="conrefnotetable2note1span" style="display:none;"><pre>Owner</pre></span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tADMEntries" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="4"><span class="blacktext" style="color:White;font-weight:bold;">ADM Entries</span>&nbsp;&nbsp;<a id="admexpandall" class="blacktext" href="javascript:openall(&#39;adm&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Type</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note6&#39;);"><img id="admnotetable0note6im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9X' target='_blank'>ADM1 - Problem Statement</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note6span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9X<br /><br /></pre><pre>Description:<br />Problem Statement</pre><pre><br />Comments:<br />The Vantage phone's Bluetooth handset is getting disconnected
+continuously</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note7&#39;);"><img id="admnotetable0note7im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWOA6' target='_blank'>ADM2 - Details/Findings</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:49 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note7span" style="display:none;"><pre>Activity Number:<br />1-ARTWOA6<br /><br /></pre><pre>Description:<br />Can the problem be duplicated?  If so, please provide the
+circumstances that will re-create the issue.</pre><pre><br />Comments:<br />Yes problem can be duplicate.</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note8&#39;);"><img id="admnotetable0note8im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWOAA' target='_blank'>ADM2 - Details/Findings</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:49 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note8span" style="display:none;"><pre>Activity Number:<br />1-ARTWOAA<br /><br /></pre><pre>Description:<br />When did the problem first start and/or last occur?</pre><pre><br />Comments:<br />It's occurring daily multiple times on vantage phones</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note9&#39;);"><img id="admnotetable0note9im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWOAE' target='_blank'>ADM2 - Details/Findings</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:49 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note9span" style="display:none;"><pre>Activity Number:<br />1-ARTWOAE<br /><br /></pre><pre>Description:<br />Have any changes occurred recently such as additions/modifications
+to the environment, upgrades/patches, repairs/replacements?  If so, please describe</pre><pre><br />Comments:<br />No changes have been made</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note10&#39;);"><img id="admnotetable0note10im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWOAI' target='_blank'>ADM2 - Details/Findings</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:49 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note10span" style="display:none;"><pre>Activity Number:<br />1-ARTWOAI<br /><br /></pre><pre>Description:<br />Do you grant approval for view only access? Note: selecting No may
+have an impact on isolation and resolution of your Service Request</pre><pre><br />Comments:<br />Yes</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note4&#39;);"><img id="admnotetable0note4im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9R' target='_blank'>ADM2 - Details/Findings</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note4span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9R<br /><br /></pre><pre>Description:<br />Details/Findings</pre><pre><br />Comments:<br />&ltnull&gt</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note5&#39;);"><img id="admnotetable0note5im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9U' target='_blank'>ADM3 - Problem Clarification</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note5span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9U<br /><br /></pre><pre>Description:<br />Problem Clarification</pre><pre><br />Comments:<br />&ltnull&gt</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note2&#39;);"><img id="admnotetable0note2im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9L' target='_blank'>ADM4 - Cause</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note2span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9L<br /><br /></pre><pre>Description:<br />Cause</pre><pre><br />Comments:<br />&ltnull&gt</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note3&#39;);"><img id="admnotetable0note3im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9O' target='_blank'>ADM5 - Solution</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note3span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9O<br /><br /></pre><pre>Description:<br />Solution</pre><pre><br />Comments:<br />&ltnull&gt</pre></span></td>
+			</tr><tr class="blacktext" style="background-color:#F2F2F2;">
+				<td><a href="javascript:toggleSpan(&#39;admnotetable0note1&#39;);"><img id="admnotetable0note1im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTWO9I' target='_blank'>ADM6 - Knowledge Management</a></td><td><a href='employeedrill.aspx?userhandle=TANGO'>TANGO</a></td><td>2/6/2026 7:05:48 AM</td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="4"><span id="admnotetable0note1span" style="display:none;"><pre>Activity Number:<br />1-ARTWO9I<br /><br /></pre><pre>Description:<br />Knowledge Management</pre><pre><br />Comments:<br />&ltnull&gt</pre></span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tInquiraEntries" style="width:900px;">
+			<tr id="TableRow2" class="headRowV3">
+				<td colspan="4"><span class="blacktext" style="color:White;font-weight:bold;">Linked Answers</span>&nbsp;&nbsp;<a id="inquiraexpandall" class="blacktext" href="javascript:openall(&#39;inquira&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Document ID</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tCaseEntries" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="8"><span class="blacktext" style="color:White;font-weight:bold;">SR Activities</span>&nbsp;&nbsp;<a id="srexpandall" class="blacktext" href="javascript:openall(&#39;sr&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Type</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Status</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Priv</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Assignment Time</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Owner</span></td>
+			</tr><tr class="blacktext" style="background-color:#E6E6E6;">
+				<td><a href="javascript:toggleSpan(&#39;srnotetable1note1&#39;);"><img id="srnotetable1note1im" src="/images/arrow_blue_up.gif" style="border-width:0px;" /></a></td><td><a href='activitydetails.aspx?act_id=1-ARTPFJM' target='_blank'>SR Status - Outbound</a></td><td><a href='employeedrill.aspx?userhandle=WANG796'>WANG796</a></td><td>2/6/2026 7:13:25 AM</td><td>Done</td><td>N</td><td>2/6/2026 7:12:17 AM</td><td><a href='employeedrill.aspx?userhandle=WANG796'>WANG796</a></td>
+			</tr><tr style="background-color:#BFBFBF;">
+				<td colspan="8"><span id="srnotetable1note1span" style="display:none;"><pre>Activity Number:<br />1-ARTPFJM<br /><br /></pre><pre>Description:<br />Status Update</pre><pre><br />Comments:<br />**current status**
+received the service request
+checked basic information
+will escalate this case to backbone team for further support</pre></span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tAttachments" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="4"><span class="blacktext" style="color:White;font-weight:bold;">Attachments</span>&nbsp;&nbsp;<a id="attachmentexpandall" class="blacktext" href="javascript:openall(&#39;attachment&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">File Name</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Private</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tSpecialHandling" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="8"><span class="blacktext" style="color:White;font-weight:bold;">Special Handling Notes</span>&nbsp;&nbsp;<a id="specialexpandall" class="blacktext" href="javascript:openall(&#39;special&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Type</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">ID</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Updated</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Updated By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Subject</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Expiration Date</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Critical</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tPartsShipped" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="8"><span class="blacktext" style="color:White;font-weight:bold;">Shipped Parts</span>&nbsp;&nbsp;<a id="partsexpandall" class="blacktext" href="javascript:openall(&#39;parts&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Act #</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Material</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Qty</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Shipped Date</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Carrier</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Tracking #</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tPartsDispatched" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="8"><span class="blacktext" style="color:White;font-weight:bold;">Dispatch Parts</span>&nbsp;&nbsp;<a id="disppartsexpandall" class="blacktext" href="javascript:openall(&#39;dispparts&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Act #</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Material</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Qty In</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Qty Out</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Used</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Material In</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tServiceOrders" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="8"><span class="blacktext" style="color:White;font-weight:bold;">Service Orders</span>&nbsp;&nbsp;<a id="serviceordersexpandall" class="blacktext" href="javascript:openall(&#39;serviceorders&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Order #</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Order Type</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Order Status</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Order Created</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tChildSr" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="5"><span class="blacktext" style="color:White;font-weight:bold;">Child SRs</span>&nbsp;&nbsp;<a id="childsrexpandall" class="blacktext" href="javascript:openall(&#39;childsr&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">SR #</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">SR Owner</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tParentSr" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="5"><span class="blacktext" style="color:White;font-weight:bold;">Parent SRs</span>&nbsp;&nbsp;<a id="parentsrexpandall" class="blacktext" href="javascript:openall(&#39;parentsr&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">SR #</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Created By</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Date Created</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">SR Owner</span></td>
+			</tr>
+		</table></td>
+	</tr><tr>
+		<td><table id="tQualityAlerts" style="width:900px;">
+			<tr class="headRowV3">
+				<td colspan="6"><span class="blacktext" style="color:White;font-weight:bold;">Quality Alerts</span>&nbsp;&nbsp;<a id="qualityalertsexpandall" class="blacktext" href="javascript:openall(&#39;qualityalerts&#39;)" style="color:White;">Expand All</a></td>
+			</tr><tr class="headRowV3">
+				<td><span class="blacktext" style="color:White;font-weight:bold;"></span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Alert</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Active</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Age</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Alert Date</span></td><td><span class="blacktext" style="color:White;font-weight:bold;">Generated By</span></td>
+			</tr>
+		</table></td>
+	</tr>
+</table>
+            </div>
+        </form>
+    </body>
+</html>
