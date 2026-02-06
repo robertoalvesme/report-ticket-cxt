@@ -1,14 +1,12 @@
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import * as XLSX from 'xlsx' // <--- Importação necessária
+import * as XLSX from 'xlsx'
 
 defineOptions({
   tags: ['barcharts', 'vertical']
 })
 
-// ... (MANTENHA TODO O CÓDIGO DE PROPS, DATA, REVENUE, ETC... IGUAL AO ANTERIOR) ...
-
-// --- Helper de Data (MANTIDO) ---
+// --- Helper de Data ---
 const formatDate = (d: Date): string => {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -16,31 +14,53 @@ const formatDate = (d: Date): string => {
   return `${y}-${m}-${day}`
 }
 
+// --- Estados Principais ---
 const datestart = ref<string>(formatDate(new Date(Date.now() - 5 * 24 * 60 * 60 * 1000)))
 const dateend = ref<string>(formatDate(new Date()))
 const isLoading = ref(false)
 const summary = ref()
 
+// --- Estado do Sync Manual ---
+const syncingId = ref<string | null>(null) // Guarda o ID do ticket que está sendo atualizado no momento
+
+// --- Estado do Modal ---
+const showModal = ref(false)
+const modalTitle = ref('')
+const modalMessage = ref('')
+const modalType = ref<'success' | 'error'>('success')
+
+const openModal = (title: string, message: string, type: 'success' | 'error' = 'success') => {
+  modalTitle.value = title
+  modalMessage.value = message
+  modalType.value = type
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+}
+
+// --- Configuração Gráfico ---
 const RevenueCategories = computed(() => ({
   desktop: {
     name: 'Tickets',
   }
 }))
 
-// --- Filtros Estáticos (MANTIDOS) ---
+// --- Filtros Estáticos ---
 const showBillable = ref(true)
 const showCodelivery = ref(true)
 const showCreditRisk = ref(true)
 const showNRSSO = ref(true)
 const showOthers = ref(true)
 
-// --- Filtros Dinâmicos (MANTIDOS) ---
+// --- Filtros Dinâmicos ---
 const availableTypes = ref<string[]>([])
 const selectedTypes = ref<string[]>([])
 const availableSkills = ref<string[]>([])
 const selectedSkills = ref<string[]>([])
 
-// --- Ações de UI (MANTIDAS) ---
+// --- Ações de UI ---
 const toggleAllTypes = () => {
   if (selectedTypes.value.length === availableTypes.value.length) {
     selectedTypes.value = []
@@ -60,7 +80,7 @@ const toggleAllSkills = () => {
 const isAllTypesSelected = computed(() => availableTypes.value.length > 0 && selectedTypes.value.length === availableTypes.value.length)
 const isAllSkillsSelected = computed(() => availableSkills.value.length > 0 && selectedSkills.value.length === availableSkills.value.length)
 
-// --- Fetch Data (MANTIDO) ---
+// --- Fetch Data (Dashboard) ---
 const filter = async () => {
   if (isLoading.value) return
 
@@ -114,28 +134,49 @@ const filter = async () => {
   }
 }
 
-// --- KPI: Total Absoluto (MANTIDO) ---
+// --- Ação: Sync Manual de Ticket ---
+const syncTicket = async (activityNumber: string) => {
+  if (syncingId.value) return // Evita múltiplos cliques
+
+  syncingId.value = activityNumber
+  try {
+    const res = await fetch(`http://localhost:5000/api/tickets/${activityNumber}/sync`, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' }
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) throw new Error(data.error || 'Failed to sync')
+
+    openModal('Sync Complete', `Ticket ${activityNumber} details updated successfully.`, 'success')
+
+    // Opcional: Se quiser atualizar a linha na tabela localmente sem reload completo:
+    // const item = summary.value.list.find((t: any) => t.activity_number === activityNumber)
+    // if(item && data.data) {
+    //    item.source = data.data.source
+    //    item.resolutionNote = data.data.resolutionNote
+    //    item.updated = true
+    // }
+
+  } catch (err: any) {
+    console.error(err)
+    openModal('Sync Failed', err.message, 'error')
+  } finally {
+    syncingId.value = null
+  }
+}
+
+// --- KPIs ---
 const hasSummary = computed(() => summary.value && summary.value.list)
 const totalTickets = computed(() => summary.value?.list?.length ?? 0)
 
-// --- KPI: Dinâmicos (MANTIDOS - Baseados na LISTA FILTRADA visualmente) ---
-const totalBillable = computed(() =>
-    summary.value?.summary?.totalBillable ?? 0
-)
+const totalBillable = computed(() => summary.value?.summary?.totalBillable ?? 0)
+const totalCreditRisk = computed(() => summary.value?.summary?.totalCreditRisk ?? 0)
+const totalCoDelivery = computed(() => summary.value?.summary?.totalCoDelivery ?? 0)
+const totalNRSSO = computed(() => summary.value?.summary?.totalNRSSO ?? 0)
 
-const totalCreditRisk = computed(() =>
-    summary.value?.summary?.totalCreditRisk ?? 0
-)
-
-const totalCoDelivery = computed(() =>
-    summary.value?.summary?.totalCoDelivery ?? 0
-)
-
-const totalNRSSO = computed(() =>
-    summary.value?.summary?.totalNRSSO ?? 0
-)
-
-// --- Lógica de Filtro Visual (MANTIDO) ---
+// --- Lógica de Filtro ---
 const ticketList = computed(() => {
   const items = summary.value?.list ?? []
   const isTrue = (v: any) => v === 1 || v === '1' || v === true
@@ -172,14 +213,11 @@ const xFormatter = (n: number): string => {
 }
 const yFormatter = (tick: number) => tick.toString()
 
-// --- NOVA FUNÇÃO: Exportar para Excel ---
+// --- Exportar Excel ---
 const downloadExcel = () => {
-  // 1. Pega a lista COMPLETA (ignorando filtros visuais)
   const rawData = summary.value?.list ?? []
-
   if (rawData.length === 0) return
 
-  // 2. Mapeia os dados para o formato exato das colunas da tabela
   const isTrue = (v: any) => v === 1 || v === '1' || v === true
 
   const excelData = rawData.map((item: any) => ({
@@ -191,41 +229,46 @@ const downloadExcel = () => {
     'Co-Delivery': isTrue(item.co_delivery) ? 'Yes' : 'No',
     'Credit Risk': isTrue(item.credit_risk) ? 'Yes' : 'No',
     'NRSSO': isTrue(item.nrsso) ? 'Yes' : 'No',
+    'Source': item.source || '',
+    'Resolution': item.resolutionNote || '',
     'Customer': item.customer_name,
     'Engineer': item.user_flu_name
   }))
 
-  // 3. Cria a planilha
   const worksheet = XLSX.utils.json_to_sheet(excelData)
-
-  // Ajuste opcional de largura de colunas (para ficar bonito ao abrir)
-  const wscols = [
-    { wch: 20 }, // SR#
-    { wch: 20 }, // Date
-    { wch: 25 }, // Type
-    { wch: 25 }, // Skill
-    { wch: 10 }, // Flags...
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 10 },
-    { wch: 40 }, // Customer
-    { wch: 30 }  // Engineer
-  ]
-  worksheet['!cols'] = wscols
-
-  // 4. Cria o Workbook e salva
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets')
-
-  // Gera o nome do arquivo com a data
   const fileName = `CXT_Report_${datestart.value}_to_${dateend.value}.xlsx`
   XLSX.writeFile(workbook, fileName)
 }
-
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
+  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 relative">
+
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-sm w-full mx-4 p-6 transform transition-all">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold" :class="modalType === 'success' ? 'text-green-600' : 'text-red-600'">
+            {{ modalTitle }}
+          </h3>
+          <button @click="closeModal" class="text-gray-400 hover:text-gray-500">
+            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
+          {{ modalMessage }}
+        </p>
+        <div class="text-right">
+          <button @click="closeModal" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="max-w-7xl mx-auto space-y-8">
 
       <section class="bg-white dark:bg-gray-800 shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 p-6">
@@ -239,30 +282,14 @@ const downloadExcel = () => {
         <form @submit.prevent="filter" class="grid gap-6 md:grid-cols-3 items-end">
           <div>
             <label for="datestart" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">Start Date</label>
-            <input
-                v-model="datestart"
-                type="date"
-                id="datestart"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                required
-            />
+            <input v-model="datestart" type="date" id="datestart" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required />
           </div>
           <div>
             <label for="dateend" class="block mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">End Date</label>
-            <input
-                v-model="dateend"
-                type="date"
-                id="dateend"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                required
-            />
+            <input v-model="dateend" type="date" id="dateend" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" required />
           </div>
           <div>
-            <button
-                type="submit"
-                :disabled="isLoading"
-                class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all"
-            >
+            <button type="submit" :disabled="isLoading" class="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all">
               <svg v-if="isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -303,19 +330,7 @@ const downloadExcel = () => {
           <h3 class="text-lg font-bold text-gray-900 dark:text-white">Tickets Volume by Type</h3>
         </div>
         <div class="w-full">
-          <BarChart
-              :y-axis="['count']"
-              :data="RevenueData"
-              :categories="RevenueCategories"
-              :x-formatter="xFormatter"
-              :height="320"
-              :x-num-ticks="6"
-              :radius="4"
-              :y-grid-line="true"
-              :y-formatter="yFormatter"
-              :legend-position="LegendPosition.TopRight"
-              :hide-legend="false"
-          />
+          <BarChart :y-axis="['count']" :data="RevenueData" :categories="RevenueCategories" :x-formatter="xFormatter" :height="320" :x-num-ticks="6" :radius="4" :y-grid-line="true" :y-formatter="yFormatter" :legend-position="LegendPosition.TopRight" :hide-legend="false" />
         </div>
       </section>
 
@@ -396,10 +411,7 @@ const downloadExcel = () => {
             </span>
           </div>
 
-          <button
-              @click="downloadExcel"
-              class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
+          <button @click="downloadExcel" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
@@ -414,10 +426,11 @@ const downloadExcel = () => {
               <th scope="col" class="px-6 py-3 whitespace-nowrap">SR#</th>
               <th scope="col" class="px-6 py-3 whitespace-nowrap">Date (GMT)</th>
               <th scope="col" class="px-6 py-3 whitespace-nowrap">Type</th>
-              <th scope="col" class="px-6 py-3 whitespace-nowrap">Skill</th>
+              <th scope="col" class="px-6 py-3 whitespace-nowrap">Details (Skill/Source/Res)</th>
               <th scope="col" class="px-6 py-3 text-center">Flags</th>
               <th scope="col" class="px-6 py-3 whitespace-nowrap">Customer</th>
               <th scope="col" class="px-6 py-3 whitespace-nowrap">Engineer</th>
+              <th scope="col" class="px-6 py-3 whitespace-nowrap text-center">Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -425,38 +438,73 @@ const downloadExcel = () => {
               <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                 {{ item.activity_number }}
               </th>
+
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ item.entered_time_gmt }}
               </td>
+
               <td class="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">
                 {{ item.activity_type_name }}
               </td>
-              <td class="px-6 py-4">
-                {{ item.activity_skill_name }}
+
+              <td class="px-6 py-4 align-top">
+                <div class="flex flex-col gap-1 max-w-[250px]">
+                    <span class="font-semibold text-gray-900 dark:text-white">
+                      {{ item.activity_skill_name }}
+                    </span>
+
+                  <div class="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
+                      <span v-if="item.source" class="inline-flex items-center">
+                         <span class="font-medium mr-1">Src:</span> {{ item.source }}
+                      </span>
+
+                    <span v-if="item.resolutionNote" class="italic truncate block" :title="item.resolutionNote">
+                        "{{ item.resolutionNote }}"
+                      </span>
+                  </div>
+                </div>
               </td>
 
               <td class="px-6 py-4">
-                <div class="flex gap-2 justify-center">
-                  <span v-if="item.billable" title="Billable" class="px-2 py-1 text-xs font-bold text-green-700 bg-green-100 rounded border border-green-200">BIL</span>
-                  <span v-if="item.co_delivery" title="Co-Delivery" class="px-2 py-1 text-xs font-bold text-blue-700 bg-blue-100 rounded border border-blue-200">COD</span>
-                  <span v-if="item.credit_risk" title="Credit Risk" class="px-2 py-1 text-xs font-bold text-red-700 bg-red-100 rounded border border-red-200">RSK</span>
-                  <span v-if="item.nrsso" title="NRSSO" class="px-2 py-1 text-xs font-bold text-purple-700 bg-purple-100 rounded border border-purple-200">NRS</span>
+                <div class="flex flex-wrap gap-1 justify-center w-[120px] mx-auto">
+                  <span v-if="item.billable" title="Billable" class="px-2 py-0.5 text-[10px] font-bold text-green-700 bg-green-100 rounded border border-green-200">BIL</span>
+                  <span v-if="item.co_delivery" title="Co-Delivery" class="px-2 py-0.5 text-[10px] font-bold text-blue-700 bg-blue-100 rounded border border-blue-200">COD</span>
+                  <span v-if="item.credit_risk" title="Credit Risk" class="px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-100 rounded border border-red-200">RSK</span>
+                  <span v-if="item.nrsso" title="NRSSO" class="px-2 py-0.5 text-[10px] font-bold text-purple-700 bg-purple-100 rounded border border-purple-200">NRS</span>
                   <span v-if="!item.billable && !item.co_delivery && !item.credit_risk && !item.nrsso" class="text-gray-300">-</span>
                 </div>
               </td>
 
-              <td class="px-6 py-4 truncate max-w-[200px]" :title="item.customer_name">
+              <td class="px-6 py-4 truncate max-w-[150px]" :title="item.customer_name">
                 {{ item.customer_name }}
               </td>
-              <td class="px-6 py-4 truncate max-w-[150px]" :title="item.user_flu_name">
+
+              <td class="px-6 py-4 truncate max-w-[120px]" :title="item.user_flu_name">
                 {{ item.user_flu_name }}
+              </td>
+
+              <td class="px-6 py-4 text-center">
+                <button
+                    @click="syncTicket(item.activity_number)"
+                    :disabled="syncingId === item.activity_number"
+                    class="group relative inline-flex items-center justify-center p-2 rounded-full text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Update Details (Sync)"
+                >
+                  <svg v-if="syncingId === item.activity_number" class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else class="w-5 h-5 transform group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                  </svg>
+                </button>
               </td>
             </tr>
 
             <tr v-if="ticketList.length === 0">
-              <td colspan="7" class="px-6 py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800">
+              <td colspan="8" class="px-6 py-12 text-center text-gray-500 bg-gray-50 dark:bg-gray-800">
                 <div class="flex flex-col items-center justify-center">
-                  <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <svg class="w-10 h-10 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   <p class="text-base font-medium">No tickets found matching your filters.</p>
                 </div>
               </td>

@@ -11,7 +11,7 @@ async function runTests() {
     // --- CARREGAR ARQUIVOS HTML (Simulação) ---
     // Ajuste os nomes dos arquivos para o caminho onde você salvou os uploads
     const casedetailsPath = path.join(__dirname, 'creditrisk-casedetails.html');
-    const audittrailPath = path.join(__dirname, 'billable-audittrail.html');
+    const audittrailPath = path.join(__dirname, '1-23451114792-billable-audittrail.html');
 
     // Leitura síncrona para o teste
     let casedetailsHtml = '';

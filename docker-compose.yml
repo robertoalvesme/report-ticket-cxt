@@ -12,6 +12,8 @@ services:
       # Credenciais da API OCD (substitua ou use arquivo .env)
       - OCD_AUTH_USER=asod_app
       - OCD_AUTH_KEY=ef740b73f6f0b20c2bcaa4387236ac70
+      - REPORT_USER=seu_usuario_avaya
+      - REPORT_PASS=sua_senha_avaya
     depends_on:
       - mongo
     networks:

@@ -1,23 +1,46 @@
-const axios = require('axios');
 const https = require('https');
 const cheerio = require('cheerio');
+const { NtlmClient } = require('axios-ntlm');
 
 class ReportService {
     constructor() {
         this.auditUrl = 'https://report.avaya.com/siebelreports/audittrail.aspx';
         this.detailsUrl = 'https://report.avaya.com/siebelreports/casedetails.aspx';
 
-        this.auth = {
-            username: process.env.REPORT_USER,
-            password: process.env.REPORT_PASS
+        // --- CONFIGURAÇÃO DE CREDENCIAIS VIA .ENV ---
+        const fullUser = process.env.REPORT_USER || '';
+        const pass = process.env.REPORT_PASS || '';
+
+        // Validação simples para ajudar no debug
+        if (!fullUser || !pass) {
+            console.error('[ReportService] ERRO CRÍTICO: Variáveis REPORT_USER ou REPORT_PASS não definidas no .env');
+        }
+
+        let domain = '';
+        let username = fullUser;
+
+        // Separa domínio se houver (ex: GLOBAL\usuario)
+        if (fullUser.includes('\\')) {
+            const parts = fullUser.split('\\');
+            domain = parts[0];
+            username = parts[1];
+        }
+
+        this.credentials = {
+            username: username,
+            password: pass,
+            domain: domain
         };
 
-        this.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+        this.httpsAgent = new https.Agent({
+            rejectUnauthorized: false,
+            keepAlive: true
+        });
     }
 
     async getTicketFullDetails(ticketNumber) {
         try {
-            console.log(`[ReportService] Buscando dados para: ${ticketNumber}`);
+            console.log(`[ReportService] Buscando dados para: ${ticketNumber} via NTLM`);
 
             const [auditHtml, detailsHtml] = await Promise.all([
                 this._fetchHtml(this.auditUrl, { sr_num: ticketNumber }),
@@ -40,84 +63,80 @@ class ReportService {
 
     async _fetchHtml(baseUrl, params) {
         try {
-            const response = await axios.get(baseUrl, {
-                params,
-                auth: this.auth,
-                httpsAgent: this.httpsAgent,
-                responseType: 'text'
+            const urlObj = new URL(baseUrl);
+            Object.keys(params).forEach(key => urlObj.searchParams.append(key, params[key]));
+            const finalUrl = urlObj.toString();
+
+            const ntlmClient = NtlmClient({
+                username: this.credentials.username,
+                password: this.credentials.password,
+                domain: this.credentials.domain,
             });
+
+            const response = await ntlmClient.get(finalUrl, {
+                httpsAgent: this.httpsAgent,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Connection': 'keep-alive'
+                }
+            });
+
             return response.data;
         } catch (error) {
-            throw new Error(`Falha no request para ${baseUrl}: ${error.message}`);
+            if (error.response) {
+                console.error(`[Erro HTTP ${error.response.status}] Headers:`, error.response.headers);
+            }
+            throw new Error(`Falha no request NTLM para ${baseUrl}: ${error.message}`);
         }
     }
 
-    // --- CASE DETAILS PARSING ---
-
+    // --- PARSE CASE DETAILS ---
     _parseCaseDetails(html) {
         const $ = cheerio.load(html);
-
-        // Mapeamento dos campos baseado no HTML fornecido
         const creditRiskVal = this._extractDetailField($, 'Credit Risk');
-
         return {
-            // Assume "Y" como true, qualquer outra coisa como false
             creditRisk: creditRiskVal === 'Y',
             source: this._extractDetailField($, 'Source'),
             resolutionNote: this._extractDetailField($, 'SR Resolution Note')
         };
     }
 
-    /**
-     * Busca EXATA pelo texto dentro dos SPANs da tabela.
-     * Isso evita confundir "Source" com "System Source ID".
-     */
     _extractDetailField($, labelText) {
         let foundValue = null;
-
-        // Itera sobre todos os spans para achar o Label EXATO
         $('span').each((i, el) => {
             const text = $(el).text().trim();
-
-            // Verifica se o texto é exatamente o label procurado (ignorando : se houver)
             if (text === labelText || text === labelText + ':') {
-                // Estrutura do HTML:
-                // TD > SPAN(Label) ... navega para ... Próximo TD > SPAN(Valor) ou Texto
                 const parentTd = $(el).closest('td');
                 const nextTd = parentTd.next('td');
-
                 if (nextTd.length) {
                     foundValue = nextTd.text().trim();
-                    return false; // Break loop
+                    return false;
                 }
             }
         });
-
         return foundValue;
     }
 
-    // --- AUDIT TRAIL PARSING ---
-
+    // --- PARSE AUDIT TRAIL ---
     _parseAuditTrail(html) {
         const $ = cheerio.load(html);
         const rows = this._extractAuditRows($);
 
-        // Ordena Cronologicamente (Antigo -> Novo)
+        if (rows.length === 0) {
+            console.warn('[ReportService] Aviso: Nenhuma linha de auditoria encontrada. Verifique se o login foi bem sucedido.');
+        }
+
         const sortedRows = rows.sort((a, b) => a.timestamp - b.timestamp);
 
-        // 1. Encontrar o Timestamp da atribuição ao CXT_GLOBAL
         const assignmentEvent = sortedRows.find(row =>
             row.field === 'Owner' && row.newValue === 'CXT_GLOBAL'
         );
 
         let relevantEvents;
-
         if (assignmentEvent) {
-            // Pega tudo que aconteceu até o exato momento da atribuição (inclusive)
             const cutoffTime = assignmentEvent.timestamp;
             relevantEvents = sortedRows.filter(row => row.timestamp <= cutoffTime);
         } else {
-            // Se nunca foi CXT, olha o histórico todo
             relevantEvents = sortedRows;
         }
 
@@ -126,15 +145,34 @@ class ReportService {
 
     _extractAuditRows($) {
         const rows = [];
-        $('table tr').each((i, elem) => {
-            const cols = $(elem).find('td');
-            if (cols.length >= 5) {
-                const dateStr = $(cols[0]).text().trim();
-                const fieldName = $(cols[2]).text().trim();
-                const newVal = $(cols[4]).text().trim();
+        const $rows = $('table tr');
 
-                // Ignora cabeçalhos
-                if (dateStr === 'CREATED' || dateStr === 'Type') return;
+        if ($rows.length === 0) return rows;
+
+        // Descoberta Dinâmica de Colunas
+        let idxDate = 7;
+        let idxField = 2;
+        let idxNewVal = 4;
+
+        const $header = $rows.first();
+        $header.find('td').each((i, el) => {
+            const txt = $(el).text().trim().toUpperCase();
+            if (txt === 'CREATED') idxDate = i;
+            if (txt === 'OBJECT_NAME') idxField = i;
+            if (txt === 'NEW_VALUE') idxNewVal = i;
+        });
+
+        $rows.each((i, elem) => {
+            if (i === 0) return;
+
+            const cols = $(elem).find('td');
+            if (cols.length > Math.max(idxDate, idxField, idxNewVal)) {
+
+                const dateStr = $(cols[idxDate]).text().trim();
+                const fieldName = $(cols[idxField]).text().trim();
+                const newVal = $(cols[idxNewVal]).text().trim();
+
+                if (!dateStr || dateStr === 'CREATED') return;
 
                 const timestamp = this._parseDateUS(dateStr);
 
@@ -153,10 +191,9 @@ class ReportService {
 
     _parseDateUS(dateStr) {
         try {
-            // Formato esperado: "2/6/2026 7:05:50 AM"
-            const cleanStr = dateStr.replace(/\s+/g, ' ').trim();
-            const [datePart, timePart, meridian] = cleanStr.split(' ');
+            const cleanStr = dateStr.replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ').trim();
 
+            const [datePart, timePart, meridian] = cleanStr.split(' ');
             if (!datePart || !timePart) return 0;
 
             const [month, day, year] = datePart.split('/');
@@ -188,10 +225,7 @@ class ReportService {
             }
         });
 
-        return {
-            billable,
-            co_delivery
-        };
+        return { billable, co_delivery };
     }
 }
 

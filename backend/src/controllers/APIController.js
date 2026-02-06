@@ -1,32 +1,28 @@
 const Ticket = require('../models/Ticket');
 const ticketUsecase = require('../usecase/TicketUsecase');
+const reportService = require('../services/ReportService'); // [Importante] Importar o serviço
 
 class APIController {
 
     _dateToTimestamp(dateStr, endOfDay = false) {
         if (!dateStr) return null;
-
-        // Tratamento robusto para DD/MM/YYYY ou YYYY-MM-DD
         const parts = dateStr.includes('/') ? dateStr.split('/') : dateStr.split('-');
-
         let day, month, year;
-        if (parts[0].length === 4) { // YYYY-MM-DD
+        if (parts[0].length === 4) {
             [year, month, day] = parts;
-        } else { // DD/MM/YYYY
+        } else {
             [day, month, year] = parts;
         }
-
         const date = new Date(year, month - 1, day);
-
         if (endOfDay) {
             date.setHours(23, 59, 59, 999);
         } else {
             date.setHours(0, 0, 0, 0);
         }
-
         return Math.floor(date.getTime() / 1000).toString();
     }
 
+    // --- Endpoint do Dashboard (Já existente) ---
     async getDashboardData(req, res) {
         try {
             const { startDate, endDate } = req.query;
@@ -40,7 +36,6 @@ class APIController {
 
             console.log(`Buscando (FULL LIST) entre ${startDate} e ${endDate}`);
 
-            // --- Lógica de Sync (Verifica se precisa buscar novos dados) ---
             const lastTicket = await Ticket.findOne().sort({ entered_time: -1 });
             let dbMaxTs = lastTicket && lastTicket.entered_time ? parseInt(lastTicket.entered_time) : 0;
 
@@ -49,7 +44,6 @@ class APIController {
                 await ticketUsecase.syncTickets();
             }
 
-            // --- Pipeline Unificado ---
             const aggregationPipeline = [
                 {
                     $match: {
@@ -58,14 +52,11 @@ class APIController {
                 },
                 {
                     $facet: {
-                        // 1. Estatísticas Globais (Agora baseadas em Booleanos)
                         "summary": [
                             {
                                 $group: {
                                     _id: null,
                                     totalTickets: { $sum: 1 },
-
-                                    // Soma se o campo for true
                                     totalBillable: {
                                         $sum: { $cond: [{ $eq: ["$billable", true] }, 1, 0] }
                                     },
@@ -75,14 +66,12 @@ class APIController {
                                     totalCoDelivery: {
                                         $sum: { $cond: [{ $eq: ["$co_delivery", true] }, 1, 0] }
                                     },
-                                    // Usa o campo nrsso direto do banco
                                     totalNRSSO: {
                                         $sum: { $cond: [{ $eq: ["$nrsso", true] }, 1, 0] }
                                     }
                                 }
                             }
                         ],
-                        // 2. Agrupamento por Tipo
                         "byType": [
                             {
                                 $group: {
@@ -91,7 +80,6 @@ class APIController {
                                 }
                             }
                         ],
-                        // 3. A Lista COMPLETA (Sem paginação)
                         "tickets": [
                             { $sort: { entered_time: -1 } },
                             {
@@ -102,18 +90,16 @@ class APIController {
                                     customer_name: 1,
                                     user_flu_name: 1,
                                     activity_status: "$detail.activity_status_name",
-
-                                    // Novos campos solicitados
                                     activity_skill_name: 1,
                                     activity_type_name: 1,
-
-                                    // Flags booleanas (Retornará true/false no JSON)
                                     billable: 1,
                                     credit_risk: 1,
                                     co_delivery: 1,
                                     nrsso: 1,
-
-                                    // Conversão de Data para GMT legível
+                                    // Novos campos retornados
+                                    source: 1,
+                                    resolutionNote: 1,
+                                    updated: 1,
                                     entered_time_gmt: {
                                         $dateToString: {
                                             format: "%d/%m/%Y %H:%M:%S",
@@ -150,7 +136,62 @@ class APIController {
         }
     }
 
+    // --- NOVO MÉTODO 1: Obter Próximo Ticket Pendente ---
+    async getPendingTicket(req, res) {
+        try {
+            const ticket = await ticketUsecase.getNextPendingTicket();
 
+            if (!ticket) {
+                return res.status(404).json({ message: 'Nenhum ticket pendente de atualização.' });
+            }
+
+            return res.json({
+                activity_number: ticket.activity_number,
+                event_id: ticket.event_id,
+                entered_time: ticket.entered_time
+            });
+        } catch (error) {
+            console.error('Erro ao buscar ticket pendente:', error);
+            return res.status(500).json({ error: 'Erro interno ao buscar ticket pendente.' });
+        }
+    }
+
+    // --- NOVO MÉTODO 2: Sincronizar Detalhes (Crawler -> Usecase -> DB) ---
+    async syncTicketDetails(req, res) {
+        try {
+            const { activityNumber } = req.params;
+
+            if (!activityNumber) {
+                return res.status(400).json({ error: 'Activity Number é obrigatório.' });
+            }
+
+            console.log(`[API] Iniciando sync manual para: ${activityNumber}`);
+
+            // 1. Crawler: Busca dados do ReportService (HTMLs)
+            const reportData = await reportService.getTicketFullDetails(activityNumber);
+
+            // 2. Mapping: Ajusta nomes se necessário para o Usecase
+            // ReportService retorna { co_delivery: bool }, Usecase espera { codelivery: bool }
+            const payload = {
+                ...reportData,
+                codelivery: reportData.co_delivery
+            };
+
+            // 3. Database: Atualiza via Usecase
+            const updatedTicket = await ticketUsecase.updateTicketDetails(activityNumber, payload);
+
+            return res.json({
+                success: true,
+                message: `Ticket ${activityNumber} atualizado com sucesso.`,
+                data: updatedTicket
+            });
+
+        } catch (error) {
+            console.error(`Erro ao sincronizar detalhes do ticket ${req.params.activityNumber}:`, error.message);
+            // Retorna erro 500 com a mensagem para facilitar debug no cliente
+            return res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new APIController();
