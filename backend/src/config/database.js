@@ -1,18 +1,20 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-    try {
-        // Substitua pela sua string de conexão real (local ou Atlas)
-        const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/dashboard_ocd', {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
+    // Tenta conectar infinitamente até conseguir (para esperar o Docker do Mongo)
+    const connectWithRetry = () => {
+        console.log('MongoDB: Tentando conectar...');
+        mongoose.connect(process.env.MONGO_URI)
+            .then(() => {
+                console.log('MongoDB Conectado');
+            })
+            .catch((err) => {
+                console.error('MongoDB falha na conexão, tentando novamente em 5s...', err.message);
+                setTimeout(connectWithRetry, 5000);
+            });
+    };
 
-        console.log(`MongoDB Conectado: ${conn.connection.host}`);
-    } catch (error) {
-        console.error(`Erro ao conectar no Mongo: ${error.message}`);
-        process.exit(1);
-    }
+    connectWithRetry();
 };
 
 module.exports = connectDB;
