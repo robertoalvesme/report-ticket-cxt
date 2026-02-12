@@ -156,28 +156,25 @@ class APIController {
         }
     }
 
-    // --- NOVO MÉTODO 2: Sincronizar Detalhes (Crawler -> Usecase -> DB) ---
     async syncTicketDetails(req, res) {
+        const { activityNumber } = req.params;
+
+        if (!activityNumber) {
+            return res.status(400).json({ error: 'Activity Number é obrigatório.' });
+        }
+
+        console.log(`[API] Iniciando sync manual para: ${activityNumber}`);
+
         try {
-            const { activityNumber } = req.params;
-
-            if (!activityNumber) {
-                return res.status(400).json({ error: 'Activity Number é obrigatório.' });
-            }
-
-            console.log(`[API] Iniciando sync manual para: ${activityNumber}`);
-
-            // 1. Crawler: Busca dados do ReportService (HTMLs)
+            // 1. Tenta fazer o crawling
             const reportData = await reportService.getTicketFullDetails(activityNumber);
 
-            // 2. Mapping: Ajusta nomes se necessário para o Usecase
-            // ReportService retorna { co_delivery: bool }, Usecase espera { codelivery: bool }
             const payload = {
                 ...reportData,
                 codelivery: reportData.co_delivery
             };
 
-            // 3. Database: Atualiza via Usecase
+            // 2. Se deu certo, atualiza com sucesso
             const updatedTicket = await ticketUsecase.updateTicketDetails(activityNumber, payload);
 
             return res.json({
@@ -187,11 +184,21 @@ class APIController {
             });
 
         } catch (error) {
-            console.error(`Erro ao sincronizar detalhes do ticket ${req.params.activityNumber}:`, error.message);
-            // Retorna erro 500 com a mensagem para facilitar debug no cliente
-            return res.status(500).json({ error: error.message });
+            // --- AQUI ESTÁ A CORREÇÃO DO LOOP INFINITO ---
+            console.error(`[API] Erro no Crawler para ${activityNumber}: ${error.message}`);
+
+            // Marca no banco que falhou, mas define updated=true para sair da fila
+            await ticketUsecase.markAsFailed(activityNumber, error.message);
+
+            // Retorna sucesso HTTP (200) para o Worker não ficar tentando de novo imediatamente,
+            // mas avisa no JSON que houve falha de dados.
+            return res.json({
+                success: false,
+                message: `Falha ao obter dados, ticket marcado com erro: ${error.message}`
+            });
         }
     }
+
 }
 
 module.exports = new APIController();

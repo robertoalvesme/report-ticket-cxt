@@ -10,7 +10,9 @@ const TicketSchema = new mongoose.Schema({
     event_name: String,
     activity_number: {
         type: String,
-        index: true
+        index: true,
+        required: true,
+        unique: true
     },
     activity_severity_name: String,
     queue_name: String,

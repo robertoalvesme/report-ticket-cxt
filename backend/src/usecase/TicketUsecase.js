@@ -73,19 +73,13 @@ class TicketUsecase {
      * Ordem: Mais antigo primeiro (entered_time ascendente).
      */
     async getNextPendingTicket() {
-        try {
-            return await Ticket.findOne({
-                $or: [
-                    { updated: false },
-                    { updated: { $exists: false } }
-                ]
-            })
-                .sort({ entered_time: 1 }) // 1 para Ascendente (Mais antigo -> Mais novo)
-                .limit(1);
-        } catch (error) {
-            console.error('Erro ao buscar próximo ticket pendente:', error.message);
-            throw error;
-        }
+        // Busca um ticket que ainda não foi atualizado
+        return await Ticket.findOne({
+            $or: [
+                { updated: { $ne: true } },
+                { updated: false }
+            ]
+        }).sort({ entered_time: 1 }); // Pega os mais antigos primeiro
     }
 
     /**
@@ -96,35 +90,49 @@ class TicketUsecase {
     async updateTicketDetails(activityNumber, data) {
         try {
             const updatePayload = {
-                updated: true, // Marca como processado para sair da fila
-                last_updated_at: new Date()
+                updated: true, // Tira da fila
+                last_updated_at: new Date(),
+                sync_error: null // Limpa erros anteriores se houver sucesso
             };
 
-            // Mapeia os parâmetros recebidos para o Schema do Banco
             if (data.billable !== undefined) updatePayload.billable = data.billable;
-            if (data.codelivery !== undefined) updatePayload.co_delivery = data.codelivery; // Nota: DB usa co_delivery
-            if (data.creditRisk !== undefined) updatePayload.credit_risk = data.creditRisk; // Nota: DB usa credit_risk
+            if (data.codelivery !== undefined) updatePayload.co_delivery = data.codelivery;
+            if (data.creditRisk !== undefined) updatePayload.credit_risk = data.creditRisk;
             if (data.source !== undefined) updatePayload.source = data.source;
             if (data.resolutionNote !== undefined) updatePayload.resolutionNote = data.resolutionNote;
 
             const updatedTicket = await Ticket.findOneAndUpdate(
                 { activity_number: activityNumber },
                 { $set: updatePayload },
-                { new: true } // Retorna o objeto atualizado
+                { new: true }
             );
 
-            if (!updatedTicket) {
-                throw new Error(`Ticket ${activityNumber} não encontrado.`);
-            }
-
-            console.log(`Ticket ${activityNumber} atualizado com sucesso via Audit.`);
             return updatedTicket;
-
         } catch (error) {
             console.error(`Erro ao atualizar detalhes do ticket ${activityNumber}:`, error.message);
             throw error;
         }
     }
+
+    async markAsFailed(activityNumber, errorMessage) {
+        try {
+            console.log(`[Usecase] Marcando ticket ${activityNumber} como falha para não travar a fila.`);
+
+            await Ticket.findOneAndUpdate(
+                { activity_number: activityNumber },
+                {
+                    $set: {
+                        updated: true, // IMPORTANTE: Marca como true para o worker pular ele
+                        sync_error: errorMessage, // Salva o motivo do erro
+                        last_updated_at: new Date()
+                    }
+                }
+            );
+        } catch (err) {
+            console.error('Erro crítico ao marcar falha:', err);
+        }
+    }
+
 }
 
 module.exports = new TicketUsecase();
