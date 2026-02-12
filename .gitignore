@@ -191,3 +191,5 @@ cython_debug/
 
 
 /worker/node_modules
+validators/planilhas/incoming.xls
+validators/planilhas/report.xlsx
