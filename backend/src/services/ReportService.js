@@ -11,7 +11,6 @@ class ReportService {
         const fullUser = process.env.REPORT_USER || '';
         const pass = process.env.REPORT_PASS || '';
 
-        // Validação simples para ajudar no debug
         if (!fullUser || !pass) {
             console.error('[ReportService] ERRO CRÍTICO: Variáveis REPORT_USER ou REPORT_PASS não definidas no .env');
         }
@@ -19,7 +18,6 @@ class ReportService {
         let domain = '';
         let username = fullUser;
 
-        // Separa domínio se houver (ex: GLOBAL\usuario)
         if (fullUser.includes('\\')) {
             const parts = fullUser.split('\\');
             domain = parts[0];
@@ -90,7 +88,6 @@ class ReportService {
         }
     }
 
-    // --- PARSE CASE DETAILS ---
     _parseCaseDetails(html) {
         const $ = cheerio.load(html);
         const creditRiskVal = this._extractDetailField($, 'Credit Risk');
@@ -117,23 +114,41 @@ class ReportService {
         return foundValue;
     }
 
-    // --- PARSE AUDIT TRAIL ---
     _parseAuditTrail(html) {
         const $ = cheerio.load(html);
         const rows = this._extractAuditRows($);
 
         if (rows.length === 0) {
-            console.warn('[ReportService] Aviso: Nenhuma linha de auditoria encontrada. Verifique se o login foi bem sucedido.');
+            console.warn('[ReportService] Aviso: Nenhuma linha de auditoria encontrada.');
         }
 
+        // Ordena Cronologicamente
         const sortedRows = rows.sort((a, b) => a.timestamp - b.timestamp);
 
-        const assignmentEvent = sortedRows.find(row =>
+        // 1. Tenta encontrar a atribuição PARA o CXT_GLOBAL
+        let assignmentEvent = sortedRows.find(row =>
             row.field === 'Owner' && row.newValue === 'CXT_GLOBAL'
         );
 
+        // 2. Fallback: Se o log omitiu a entrada, procura quando ele SAIU do CXT_GLOBAL
+        if (!assignmentEvent) {
+            assignmentEvent = sortedRows.find(row =>
+                row.field === 'Owner' && row.oldValue === 'CXT_GLOBAL'
+            );
+        }
+
+        // 3. Fallback: Se não tem rastro do CXT, procura o primeiro assignment humano
+        if (!assignmentEvent) {
+            assignmentEvent = sortedRows.find(row =>
+                row.field === 'Owner' &&
+                row.newValue &&
+                !['CXT_GLOBAL', 'TANGO', 'Unassigned', ''].includes(row.newValue)
+            );
+        }
+
         let relevantEvents;
         if (assignmentEvent) {
+            // Pega todo o rastro ATÉ o exato momento onde foi para um engenheiro/CXT
             const cutoffTime = assignmentEvent.timestamp;
             relevantEvents = sortedRows.filter(row => row.timestamp <= cutoffTime);
         } else {
@@ -149,9 +164,9 @@ class ReportService {
 
         if ($rows.length === 0) return rows;
 
-        // Descoberta Dinâmica de Colunas
         let idxDate = 7;
         let idxField = 2;
+        let idxOldVal = 3; // NOVA COLUNA ADICIONADA AQUI
         let idxNewVal = 4;
 
         const $header = $rows.first();
@@ -159,6 +174,7 @@ class ReportService {
             const txt = $(el).text().trim().toUpperCase();
             if (txt === 'CREATED') idxDate = i;
             if (txt === 'OBJECT_NAME') idxField = i;
+            if (txt === 'OLD_VALUE') idxOldVal = i;
             if (txt === 'NEW_VALUE') idxNewVal = i;
         });
 
@@ -166,10 +182,11 @@ class ReportService {
             if (i === 0) return;
 
             const cols = $(elem).find('td');
-            if (cols.length > Math.max(idxDate, idxField, idxNewVal)) {
+            if (cols.length > Math.max(idxDate, idxField, idxOldVal, idxNewVal)) {
 
                 const dateStr = $(cols[idxDate]).text().trim();
                 const fieldName = $(cols[idxField]).text().trim();
+                const oldVal = $(cols[idxOldVal]).text().trim(); // EXTRAÇÃO DO VALOR ANTIGO
                 const newVal = $(cols[idxNewVal]).text().trim();
 
                 if (!dateStr || dateStr === 'CREATED') return;
@@ -181,6 +198,7 @@ class ReportService {
                         dateRaw: dateStr,
                         timestamp: timestamp,
                         field: fieldName,
+                        oldValue: oldVal,
                         newValue: newVal
                     });
                 }
@@ -216,12 +234,18 @@ class ReportService {
         let billable = false;
         let co_delivery = false;
 
+        // Flags de controle para garantir que apenas o PRIMEIRO valor seja considerado
+        let foundBillable = false;
+        let foundCodelivery = false;
+
         events.forEach(event => {
-            if (event.field === 'BILLABLE_FLG') {
+            if (event.field === 'BILLABLE_FLG' && !foundBillable) {
                 billable = event.newValue === 'Y';
+                foundBillable = true; // Trava para não ser sobrescrito por mudanças futuras
             }
-            if (event.field === 'X_AV_SR_CODELIVERY_FLG') {
+            if (event.field === 'X_AV_SR_CODELIVERY_FLG' && !foundCodelivery) {
                 co_delivery = event.newValue === 'Y';
+                foundCodelivery = true; // Trava
             }
         });
 
