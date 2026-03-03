@@ -5,51 +5,29 @@ class TicketUsecase {
 
     async syncTickets() {
         console.log('--- Iniciando Sincronização de Lista ---');
-
         const lastTicket = await Ticket.findOne().sort({ event_id: -1 });
         let currentEventId = lastTicket ? lastTicket.event_id : '28595223';
 
-        console.log(`Usando event_id_last: ${currentEventId}`);
-
         const apiData = await ocdService.fetchTicketAssignments(currentEventId);
-
-        if (!apiData || !apiData.ticket_assignments) {
-            console.log('Nenhum dado retornado da API.');
-            return { processed: 0 };
-        }
-
-        const tickets = apiData.ticket_assignments;
-        console.log(`${tickets.length} tickets encontrados. Salvando...`);
+        if (!apiData || !apiData.ticket_assignments) return { processed: 0 };
 
         let processedCount = 0;
-
-        for (const ticketData of tickets) {
+        for (const ticketData of apiData.ticket_assignments) {
             try {
-                // Lógica para definir se é NRSSO
-                const isNrsso = ticketData.customer_fl === '0000000010';
-
                 const payload = {
                     event_id: ticketData.event_id,
                     event_name: ticketData.event_name,
                     activity_number: ticketData.activity_number,
                     activity_severity_name: ticketData.activity_severity_name,
                     queue_name: ticketData.queue_name,
-                    user_name: ticketData.user_name,
                     user_flu_name: ticketData.user_flu_name,
-                    user_first_name: ticketData.user_first_name,
-                    user_last_name: ticketData.user_last_name,
-                    customer_fl: ticketData.customer_fl,
                     customer_name: ticketData.customer_name,
                     entered_time: ticketData.entered_time,
                     activity_type_name: ticketData.activity_type_name,
-                    activity_skill_name: ticketData.activity_skill_name,
-
-                    // --- CONVERSÃO PARA BOOLEANO ---
                     billable: ticketData.billable === '1',
                     credit_risk: ticketData.credit_risk === '1',
                     co_delivery: ticketData.co_delivery === '1',
-                    nrsso: isNrsso
-                    // -------------------------------
+                    nrsso: ticketData.customer_fl === '0000000010'
                 };
 
                 await Ticket.upsertTicket(payload);
@@ -58,35 +36,15 @@ class TicketUsecase {
                 console.error(`Erro ao salvar ticket ${ticketData.activity_number}:`, err.message);
             }
         }
-
-        console.log(`Sincronização finalizada. Processados: ${processedCount}`);
-
-        return {
-            processed: processedCount,
-            api_last_event_id: apiData.event_id_last
-        };
+        return { processed: processedCount, api_last_event_id: apiData.event_id_last };
     }
 
-    /**
-     * Obtém o próximo ticket que precisa ser atualizado (Audit Trail).
-     * Critério: Flag 'updated' é false ou não existe.
-     * Ordem: Mais antigo primeiro (entered_time ascendente).
-     */
     async getNextPendingTicket() {
-        // Busca um ticket que ainda não foi atualizado
         return await Ticket.findOne({
-            $or: [
-                { updated: { $ne: true } },
-                { updated: false }
-            ]
-        }).sort({ entered_time: 1 }); // Pega os mais antigos primeiro
+            $or: [{ updated: { $ne: true } }, { updated: false }]
+        }).sort({ entered_time: 1 });
     }
 
-    /**
-     * Atualiza os detalhes de auditoria de um chamado específico.
-     * @param {string} activityNumber - O número do chamado (SR#)
-     * @param {object} data - Objeto contendo { billable, codelivery, creditRisk, source, resolutionNote }
-     */
     async updateTicketDetails(activityNumber, data) {
         try {
             const updatePayload = {
@@ -95,52 +53,40 @@ class TicketUsecase {
                 sync_error: null
             };
 
-            // Mapeamento dos novos campos vindo do ReportService
             if (data.billable !== undefined) updatePayload.billable = data.billable;
-            if (data.codelivery !== undefined) updatePayload.co_delivery = data.codelivery;
+            if (data.co_delivery !== undefined) updatePayload.co_delivery = data.co_delivery;
             if (data.creditRisk !== undefined) updatePayload.credit_risk = data.creditRisk;
             if (data.source !== undefined) updatePayload.source = data.source;
             if (data.resolutionNote !== undefined) updatePayload.resolutionNote = data.resolutionNote;
 
-            // Novos campos para persistência
+            // Novos campos de detalhe e horas
             if (data.serviceAction !== undefined) updatePayload.serviceAction = data.serviceAction;
             if (data.resolutionAction !== undefined) updatePayload.resolutionAction = data.resolutionAction;
             if (data.resolutionDetail !== undefined) updatePayload.resolutionDetail = data.resolutionDetail;
             if (data.srOwner !== undefined) updatePayload.srOwner = data.srOwner;
             if (data.srAgeDays !== undefined) updatePayload.srAgeDays = data.srAgeDays;
+            if (data.hoursBooked !== undefined) updatePayload.hoursBooked = data.hoursBooked;
 
-            const updatedTicket = await Ticket.findOneAndUpdate(
+            return await Ticket.findOneAndUpdate(
                 { activity_number: activityNumber },
                 { $set: updatePayload },
                 { new: true }
             );
-
-            return updatedTicket;
         } catch (error) {
-            console.error(`Erro ao atualizar detalhes do ticket ${activityNumber}:`, error.message);
             throw error;
         }
     }
 
     async markAsFailed(activityNumber, errorMessage) {
         try {
-            console.log(`[Usecase] Marcando ticket ${activityNumber} como falha para não travar a fila.`);
-
             await Ticket.findOneAndUpdate(
                 { activity_number: activityNumber },
-                {
-                    $set: {
-                        updated: true, // IMPORTANTE: Marca como true para o worker pular ele
-                        sync_error: errorMessage, // Salva o motivo do erro
-                        last_updated_at: new Date()
-                    }
-                }
+                { $set: { updated: true, sync_error: errorMessage, last_updated_at: new Date() } }
             );
         } catch (err) {
-            console.error('Erro crítico ao marcar falha:', err);
+            console.error('Erro ao marcar falha:', err);
         }
     }
-
 }
 
 module.exports = new TicketUsecase();
