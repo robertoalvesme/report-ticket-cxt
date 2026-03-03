@@ -94,7 +94,12 @@ class ReportService {
         return {
             creditRisk: creditRiskVal === 'Y',
             source: this._extractDetailField($, 'Source'),
-            resolutionNote: this._extractDetailField($, 'SR Resolution Note')
+            resolutionNote: this._extractDetailField($, 'SR Resolution Note'),
+            serviceAction: this._extractDetailField($, 'Service Action'),
+            resolutionAction: this._extractDetailField($, 'Resolution Action'),
+            resolutionDetail: this._extractDetailField($, 'Resolution Detail'),
+            srOwner: this._extractDetailField($, 'SR Owner'),
+            srAgeDays: this._extractDetailField($, 'SR Age (days)')
         };
     }
 

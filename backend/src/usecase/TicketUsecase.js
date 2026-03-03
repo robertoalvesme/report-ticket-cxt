@@ -90,16 +90,24 @@ class TicketUsecase {
     async updateTicketDetails(activityNumber, data) {
         try {
             const updatePayload = {
-                updated: true, // Tira da fila
+                updated: true,
                 last_updated_at: new Date(),
-                sync_error: null // Limpa erros anteriores se houver sucesso
+                sync_error: null
             };
 
+            // Mapeamento dos novos campos vindo do ReportService
             if (data.billable !== undefined) updatePayload.billable = data.billable;
             if (data.codelivery !== undefined) updatePayload.co_delivery = data.codelivery;
             if (data.creditRisk !== undefined) updatePayload.credit_risk = data.creditRisk;
             if (data.source !== undefined) updatePayload.source = data.source;
             if (data.resolutionNote !== undefined) updatePayload.resolutionNote = data.resolutionNote;
+
+            // Novos campos para persistência
+            if (data.serviceAction !== undefined) updatePayload.serviceAction = data.serviceAction;
+            if (data.resolutionAction !== undefined) updatePayload.resolutionAction = data.resolutionAction;
+            if (data.resolutionDetail !== undefined) updatePayload.resolutionDetail = data.resolutionDetail;
+            if (data.srOwner !== undefined) updatePayload.srOwner = data.srOwner;
+            if (data.srAgeDays !== undefined) updatePayload.srAgeDays = data.srAgeDays;
 
             const updatedTicket = await Ticket.findOneAndUpdate(
                 { activity_number: activityNumber },

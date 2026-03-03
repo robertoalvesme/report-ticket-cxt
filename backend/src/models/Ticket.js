@@ -36,7 +36,14 @@ const TicketSchema = new mongoose.Schema({
     // --- NOVOS CAMPOS ADICIONADOS ---
     source: String,
     resolutionNote: String,
+    serviceAction: String,
+    resolutionAction: String,
+    resolutionDetail: String,
+    srOwner: String,
+    srAgeDays: String,
     updated: { type: Boolean, default: false, index: true }, // Indexado para fila de processamento
+
+
     // --------------------------------
 
     detail: {
