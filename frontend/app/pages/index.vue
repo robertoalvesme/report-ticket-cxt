@@ -229,8 +229,16 @@ const downloadExcel = () => {
     'Co-Delivery': isTrue(item.co_delivery) ? 'Yes' : 'No',
     'Credit Risk': isTrue(item.credit_risk) ? 'Yes' : 'No',
     'NRSSO': isTrue(item.nrsso) ? 'Yes' : 'No',
+    // --- NOVAS COLUNAS ADICIONADAS ---
+    'Hours Booked': item.hoursBooked ?? 0,
+    'SR Age (Days)': item.srAgeDays || '',
+    'Current Owner': item.srOwner || '',
+    'Service Action': item.serviceAction || '',
+    'Resolution Action': item.resolutionAction || '',
+    'Resolution Detail': item.resolutionDetail || '',
+    // ---------------------------------
     'Source': item.source || '',
-    'Resolution': item.resolutionNote || '',
+    'Resolution Note': item.resolutionNote || '',
     'Customer': item.customer_name,
     'Engineer': item.user_flu_name
   }))

@@ -1,6 +1,6 @@
 const Ticket = require('../models/Ticket');
 const ticketUsecase = require('../usecase/TicketUsecase');
-const reportService = require('../services/ReportService'); // [Importante] Importar o serviço
+const reportService = require('../services/ReportService');
 
 class APIController {
 
@@ -22,7 +22,6 @@ class APIController {
         return Math.floor(date.getTime() / 1000).toString();
     }
 
-    // --- Endpoint do Dashboard (Já existente) ---
     async getDashboardData(req, res) {
         try {
             const { startDate, endDate } = req.query;
@@ -34,13 +33,10 @@ class APIController {
             const startTs = this._dateToTimestamp(startDate);
             const endTs = this._dateToTimestamp(endDate, true);
 
-            console.log(`Buscando (FULL LIST) entre ${startDate} e ${endDate}`);
-
             const lastTicket = await Ticket.findOne().sort({ entered_time: -1 });
             let dbMaxTs = lastTicket && lastTicket.entered_time ? parseInt(lastTicket.entered_time) : 0;
 
             if (parseInt(endTs) > dbMaxTs) {
-                console.log(`Sync necessário...`);
                 await ticketUsecase.syncTickets();
             }
 
@@ -57,28 +53,15 @@ class APIController {
                                 $group: {
                                     _id: null,
                                     totalTickets: { $sum: 1 },
-                                    totalBillable: {
-                                        $sum: { $cond: [{ $eq: ["$billable", true] }, 1, 0] }
-                                    },
-                                    totalCreditRisk: {
-                                        $sum: { $cond: [{ $eq: ["$credit_risk", true] }, 1, 0] }
-                                    },
-                                    totalCoDelivery: {
-                                        $sum: { $cond: [{ $eq: ["$co_delivery", true] }, 1, 0] }
-                                    },
-                                    totalNRSSO: {
-                                        $sum: { $cond: [{ $eq: ["$nrsso", true] }, 1, 0] }
-                                    }
+                                    totalBillable: { $sum: { $cond: [{ $eq: ["$billable", true] }, 1, 0] } },
+                                    totalCreditRisk: { $sum: { $cond: [{ $eq: ["$credit_risk", true] }, 1, 0] } },
+                                    totalCoDelivery: { $sum: { $cond: [{ $eq: ["$co_delivery", true] }, 1, 0] } },
+                                    totalNRSSO: { $sum: { $cond: [{ $eq: ["$nrsso", true] }, 1, 0] } }
                                 }
                             }
                         ],
                         "byType": [
-                            {
-                                $group: {
-                                    _id: "$activity_type_name",
-                                    count: { $sum: 1 }
-                                }
-                            }
+                            { $group: { _id: "$activity_type_name", count: { $sum: 1 } } }
                         ],
                         "tickets": [
                             { $sort: { entered_time: -1 } },
@@ -96,17 +79,22 @@ class APIController {
                                     credit_risk: 1,
                                     co_delivery: 1,
                                     nrsso: 1,
-                                    // Novos campos retornados
                                     source: 1,
                                     resolutionNote: 1,
                                     updated: 1,
+                                    // --- NOVOS CAMPOS ADICIONADOS AO PROJECT ---
+                                    hoursBooked: 1,
+                                    srAgeDays: 1,
+                                    srOwner: 1,
+                                    serviceAction: 1,
+                                    resolutionAction: 1,
+                                    resolutionDetail: 1,
+                                    // -------------------------------------------
                                     entered_time_gmt: {
                                         $dateToString: {
                                             format: "%d/%m/%Y %H:%M:%S",
                                             date: {
-                                                $toDate: {
-                                                    $multiply: [{ $toDouble: "$entered_time" }, 1000]
-                                                }
+                                                $toDate: { $multiply: [{ $toDouble: "$entered_time" }, 1000] }
                                             },
                                             timezone: "GMT"
                                         }
@@ -123,9 +111,7 @@ class APIController {
 
             return res.json({
                 period: { startDate, endDate },
-                summary: data.summary[0] || {
-                    totalTickets: 0, totalBillable: 0, totalCreditRisk: 0, totalCoDelivery: 0, totalNRSSO: 0
-                },
+                summary: data.summary[0] || { totalTickets: 0, totalBillable: 0, totalCreditRisk: 0, totalCoDelivery: 0, totalNRSSO: 0 },
                 types: data.byType.map(t => ({ type: t._id || 'Outros', count: t.count })),
                 list: data.tickets
             });
@@ -136,46 +122,27 @@ class APIController {
         }
     }
 
-    // --- NOVO MÉTODO 1: Obter Próximo Ticket Pendente ---
     async getPendingTicket(req, res) {
         try {
             const ticket = await ticketUsecase.getNextPendingTicket();
-
-            if (!ticket) {
-                return res.status(404).json({ message: 'Nenhum ticket pendente de atualização.' });
-            }
-
+            if (!ticket) return res.status(404).json({ message: 'Nenhum ticket pendente.' });
             return res.json({
                 activity_number: ticket.activity_number,
                 event_id: ticket.event_id,
                 entered_time: ticket.entered_time
             });
         } catch (error) {
-            console.error('Erro ao buscar ticket pendente:', error);
-            return res.status(500).json({ error: 'Erro interno ao buscar ticket pendente.' });
+            return res.status(500).json({ error: 'Erro interno.' });
         }
     }
 
     async syncTicketDetails(req, res) {
         const { activityNumber } = req.params;
-
-        if (!activityNumber) {
-            return res.status(400).json({ error: 'Activity Number é obrigatório.' });
-        }
-
-        console.log(`[API] Iniciando sync manual para: ${activityNumber}`);
+        if (!activityNumber) return res.status(400).json({ error: 'Activity Number é obrigatório.' });
 
         try {
-            // 1. Tenta fazer o crawling
             const reportData = await reportService.getTicketFullDetails(activityNumber);
-
-            const payload = {
-                ...reportData,
-                codelivery: reportData.co_delivery
-            };
-
-            // 2. Se deu certo, atualiza com sucesso
-            const updatedTicket = await ticketUsecase.updateTicketDetails(activityNumber, payload);
+            const updatedTicket = await ticketUsecase.updateTicketDetails(activityNumber, reportData);
 
             return res.json({
                 success: true,
@@ -184,21 +151,13 @@ class APIController {
             });
 
         } catch (error) {
-            // --- AQUI ESTÁ A CORREÇÃO DO LOOP INFINITO ---
-            console.error(`[API] Erro no Crawler para ${activityNumber}: ${error.message}`);
-
-            // Marca no banco que falhou, mas define updated=true para sair da fila
             await ticketUsecase.markAsFailed(activityNumber, error.message);
-
-            // Retorna sucesso HTTP (200) para o Worker não ficar tentando de novo imediatamente,
-            // mas avisa no JSON que houve falha de dados.
             return res.json({
                 success: false,
-                message: `Falha ao obter dados, ticket marcado com erro: ${error.message}`
+                message: `Falha ao obter dados: ${error.message}`
             });
         }
     }
-
 }
 
 module.exports = new APIController();

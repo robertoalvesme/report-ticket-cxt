@@ -8,6 +8,9 @@ py validar_chamados.py
 ## Rebuild Backend Server
 docker compose up -d --build app
 
+## Rebuild Frontend Server
+docker compose up -d --build frontend
+
 ## Rebuild All
 docker compose down && docker compose up -d --build
 
