@@ -12,7 +12,8 @@ docker compose up -d --build app
 docker compose up -d --build frontend
 
 ## Rebuild All
-docker compose down && docker compose up -d --build
+docker compose down
+docker compose up -d --build
 
 ## Limpar o banco de dados
 docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval "db.dropDatabase()"
