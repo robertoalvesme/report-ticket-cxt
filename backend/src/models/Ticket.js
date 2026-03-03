@@ -65,7 +65,7 @@ const TicketSchema = new mongoose.Schema({
 
 TicketSchema.statics.upsertTicket = async function(ticketData) {
     return this.findOneAndUpdate(
-        { event_id: ticketData.event_id },
+        { activity_number: ticketData.activity_number },
         ticketData,
         { upsert: true, new: true }
     );
