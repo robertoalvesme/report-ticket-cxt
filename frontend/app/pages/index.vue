@@ -233,7 +233,8 @@ const downloadExcel = () => {
     'Hours Booked SD': item.hoursBooked ?? 0,
     'SR Age (Days)': item.srAgeDays || '',
     'Current Owner': item.srOwner || '',
-    'Service Action': item.serviceAction || '',
+    'First Service Action': item.serviceActionFirst || '',
+    'Current Service Action': item.serviceAction || '',
     'Resolution Action': item.resolutionAction || '',
     'Resolution Detail': item.resolutionDetail || '',
     'Region': item.region || '',
@@ -471,6 +472,14 @@ const downloadExcel = () => {
 
                       <span v-if="item.region" class="italic truncate block" :title="item.region">
                         <span class="font-medium mr-1">Region:</span> {{ item.region }}
+                      </span>
+
+                      <span v-if="item.serviceActionFirst" class="italic truncate block" :title="item.serviceActionFirst">
+                        <span class="font-medium mr-1">First Service Action:</span> {{ item.serviceActionFirst }}
+                      </span>
+
+                      <span v-if="item.serviceAction" class="italic truncate block" :title="item.serviceAction">
+                        <span class="font-medium mr-1">Current Service Action:</span> {{ item.serviceAction }}
                       </span>
 
                       <span v-if="item.hoursBooked" class="italic truncate block" :title="item.hoursBooked">

@@ -1,7 +1,7 @@
 const https = require('https');
 const cheerio = require('cheerio');
 const { NtlmClient } = require('axios-ntlm');
-const Ticket = require('../models/Ticket'); // IMPORTANTE: Esta linha resolve o erro "Ticket is not defined"
+const Ticket = require('../models/Ticket');
 
 class ReportService {
     constructor() {
@@ -61,7 +61,6 @@ class ReportService {
 
     _parseRegion(html) {
         const $ = cheerio.load(html);
-        // Pega o conteúdo do span com id lblRegion (conforme fldrill.html)
         return $('#lblRegion').text().trim() || 'N/A';
     }
 
@@ -134,12 +133,27 @@ class ReportService {
     _parseAuditTrail(html) {
         const $ = cheerio.load(html);
         const rows = this._extractAuditRows($);
+
+        // Ordena do mais antigo para o mais novo
         const sortedRows = rows.sort((a, b) => a.timestamp - b.timestamp);
+
+        // 1. Restaura a lógica de calcular flags (Billable/Co-Delivery) baseada no momento da fila CXT
         let assignmentEvent = sortedRows.find(row => row.field === 'Owner' && row.newValue === 'CXT_GLOBAL') ||
             sortedRows.find(row => row.field === 'Owner' && row.oldValue === 'CXT_GLOBAL') ||
             sortedRows.find(row => row.field === 'Owner' && row.newValue && !['CXT_GLOBAL', 'TANGO', 'Unassigned', ''].includes(row.newValue));
+
         let relevantEvents = assignmentEvent ? sortedRows.filter(row => row.timestamp <= assignmentEvent.timestamp) : sortedRows;
-        return this._calculateFlags(relevantEvents);
+
+        const auditData = this._calculateFlags(relevantEvents);
+
+        // 2. Busca o Primeiro Service Action (FAQ/General Questions, DOA, etc) olhando TODA a história
+        const firstServiceActionEvent = sortedRows.find(row =>
+            row.field === 'X_AV_SR_TYPE_DETAIL' && row.newValue && row.newValue.trim() !== ''
+        );
+
+        auditData.serviceActionFirst = firstServiceActionEvent ? firstServiceActionEvent.newValue : 'N/A';
+
+        return auditData;
     }
 
     _extractAuditRows($) {

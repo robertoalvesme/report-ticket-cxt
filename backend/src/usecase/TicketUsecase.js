@@ -124,6 +124,7 @@ class TicketUsecase {
             if (data.source !== undefined) updatePayload.source = data.source;
             if (data.resolutionNote !== undefined) updatePayload.resolutionNote = data.resolutionNote;
             if (data.serviceAction !== undefined) updatePayload.serviceAction = data.serviceAction;
+            if (data.serviceActionFirst !== undefined) updatePayload.serviceActionFirst = data.serviceActionFirst;
             if (data.resolutionAction !== undefined) updatePayload.resolutionAction = data.resolutionAction;
             if (data.resolutionDetail !== undefined) updatePayload.resolutionDetail = data.resolutionDetail;
             if (data.srOwner !== undefined) updatePayload.srOwner = data.srOwner;

@@ -18,13 +18,17 @@ docker compose up -d --build frontend
 docker compose down
 docker compose up -d --build
 
+
+# Mongo Queries
+
 ## Limpar o banco de dados
 docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval "db.dropDatabase()"
 
 ## Marcar todos os tickets para reprocessamento
 docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval 'db.tickets.updateMany({}, { $set: { updated: false } })'
 
-# Mongo Queries
+## Marcar todos os tickets para reprocessamento - por coluna inexistente ou nula [alterar serviceActionFirst pela coluna desejada]:
+docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval 'db.tickets.updateMany({ $or: [ { serviceActionFirst: { $exists: false } }, { serviceActionFirst: { $in: [null, "", "N/A"] } } ] }, { $set: { updated: false } })'
 
 ## Verificar Tickets Pendentes
 docker exec ocd_db mongosh dashboard_ocd --quiet --eval 'printjson({ Total: db.tickets.countDocuments({}), Atualizados: db.tickets.countDocuments({ updated: true }), Pendentes: db.tickets.countDocuments({ updated: { $ne: true } }) })'

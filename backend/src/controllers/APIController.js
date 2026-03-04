@@ -90,11 +90,12 @@ class APIController {
                                     resolutionNote: 1,
                                     updated: 1,
                                     // --- CAMPOS DO CRAWLER EXPOSTOS ---
-                                    region: 1,            // <--- ADICIONADO AQUI
-                                    hoursBooked: 1,       // <--- ADICIONADO AQUI
+                                    region: 1,
+                                    hoursBooked: 1,
                                     srAgeDays: 1,
                                     srOwner: 1,
                                     serviceAction: 1,
+                                    serviceActionFirst: 1,
                                     resolutionAction: 1,
                                     resolutionDetail: 1,
                                     // ----------------------------------

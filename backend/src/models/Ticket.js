@@ -37,6 +37,7 @@ const TicketSchema = new mongoose.Schema({
     source: String,
     resolutionNote: String,
     serviceAction: String,
+    serviceActionFirst: String,
     resolutionAction: String,
     resolutionDetail: String,
     srOwner: String,
