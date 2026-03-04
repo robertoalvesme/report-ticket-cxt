@@ -79,12 +79,27 @@ class TicketUsecase {
      * Critério: Flag 'updated' é false ou não existe.
      */
     async getNextPendingTicket() {
-        return await Ticket.findOne({
-            $or: [
-                { updated: { $ne: true } },
-                { updated: false }
-            ]
-        }).sort({ entered_time: 1 });
+        // Busca e já marca como "updated: true" (ou um status "processing")
+        // em uma única operação atômica no banco.
+        return await Ticket.findOneAndUpdate(
+            {
+                $or: [
+                    { updated: { $ne: true } },
+                    { updated: false }
+                ]
+            },
+            {
+                $set: {
+                    updated: true, // Bloqueia para outros workers
+                    last_updated_at: new Date(),
+                    sync_error: 'Processing...' // Opcional: status temporário
+                }
+            },
+            {
+                sort: { _id: 1 }, // Sua lógica de seleção
+                new: true         // Retorna o documento atualizado
+            }
+        );
     }
 
     /**

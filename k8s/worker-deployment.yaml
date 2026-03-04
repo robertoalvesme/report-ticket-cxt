@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocd-worker
+spec:
+  replicas: 3 # Define aqui a quantidade de máquinas em paralelo
+  selector:
+    matchLabels:
+      app: ocd-worker
+  template:
+    metadata:
+      labels:
+        app: ocd-worker
+    spec:
+      containers:
+        - name: worker
+          image: seu-registro/ocd-worker:latest
+          env:
+            - name: API_URL
+              value: "http://ocd-app-service:5000/api" # Service DNS do K8s

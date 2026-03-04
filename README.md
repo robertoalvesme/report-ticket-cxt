@@ -3,7 +3,10 @@ py -m pip install pandas xlrd openpyxl
 py validar_chamados.py 
 
 
-# Docker 
+# Docker
+
+## Escalar o Worker
+docker compose up -d --scale worker=3
 
 ## Rebuild Backend Server
 docker compose up -d --build app

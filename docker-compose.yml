@@ -32,7 +32,7 @@ services:
   # --- 3. WORKER (Processamento em Background) ---
   worker:
     build: ./worker
-    container_name: ocd_worker
+    # container_name: ocd_worker
     restart: always
     environment:
       - API_URL=http://app:5000/api
