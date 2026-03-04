@@ -18,6 +18,9 @@ docker compose up -d --build
 ## Limpar o banco de dados
 docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval "db.dropDatabase()"
 
+## Marcar todos os tickets para reprocessamento
+docker exec -it ocd_db mongosh "mongodb://localhost:27017/dashboard_ocd" --eval 'db.tickets.updateMany({}, { $set: { updated: false } })'
+
 # Mongo Queries
 
 ## Verificar Tickets Pendentes

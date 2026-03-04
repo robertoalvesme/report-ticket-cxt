@@ -4,6 +4,9 @@ const reportService = require('../services/ReportService');
 
 class APIController {
 
+    /**
+     * Auxiliar para converter strings de data em timestamp Unix (segundos).
+     */
     _dateToTimestamp(dateStr, endOfDay = false) {
         if (!dateStr) return null;
         const parts = dateStr.includes('/') ? dateStr.split('/') : dateStr.split('-');
@@ -22,6 +25,10 @@ class APIController {
         return Math.floor(date.getTime() / 1000).toString();
     }
 
+    /**
+     * Endpoint principal do Dashboard.
+     * Retorna o resumo, tipos e a lista detalhada de tickets.
+     */
     async getDashboardData(req, res) {
         try {
             const { startDate, endDate } = req.query;
@@ -33,6 +40,7 @@ class APIController {
             const startTs = this._dateToTimestamp(startDate);
             const endTs = this._dateToTimestamp(endDate, true);
 
+            // Verifica se precisamos sincronizar novos tickets do OCD antes de listar
             const lastTicket = await Ticket.findOne().sort({ entered_time: -1 });
             let dbMaxTs = lastTicket && lastTicket.entered_time ? parseInt(lastTicket.entered_time) : 0;
 
@@ -72,7 +80,6 @@ class APIController {
                                     activity_number: 1,
                                     customer_name: 1,
                                     user_flu_name: 1,
-                                    activity_status: "$detail.activity_status_name",
                                     activity_skill_name: 1,
                                     activity_type_name: 1,
                                     billable: 1,
@@ -82,14 +89,15 @@ class APIController {
                                     source: 1,
                                     resolutionNote: 1,
                                     updated: 1,
-                                    // --- NOVOS CAMPOS ADICIONADOS AO PROJECT ---
-                                    hoursBooked: 1,
+                                    // --- CAMPOS DO CRAWLER EXPOSTOS ---
+                                    region: 1,            // <--- ADICIONADO AQUI
+                                    hoursBooked: 1,       // <--- ADICIONADO AQUI
                                     srAgeDays: 1,
                                     srOwner: 1,
                                     serviceAction: 1,
                                     resolutionAction: 1,
                                     resolutionDetail: 1,
-                                    // -------------------------------------------
+                                    // ----------------------------------
                                     entered_time_gmt: {
                                         $dateToString: {
                                             format: "%d/%m/%Y %H:%M:%S",
@@ -122,26 +130,38 @@ class APIController {
         }
     }
 
+    /**
+     * Retorna o próximo ticket que o Worker deve processar.
+     */
     async getPendingTicket(req, res) {
         try {
             const ticket = await ticketUsecase.getNextPendingTicket();
             if (!ticket) return res.status(404).json({ message: 'Nenhum ticket pendente.' });
+
             return res.json({
                 activity_number: ticket.activity_number,
                 event_id: ticket.event_id,
                 entered_time: ticket.entered_time
             });
         } catch (error) {
-            return res.status(500).json({ error: 'Erro interno.' });
+            return res.status(500).json({ error: 'Erro interno ao buscar pendente.' });
         }
     }
 
+    /**
+     * Aciona manualmente o crawler para um ticket específico.
+     */
     async syncTicketDetails(req, res) {
         const { activityNumber } = req.params;
         if (!activityNumber) return res.status(400).json({ error: 'Activity Number é obrigatório.' });
 
+        console.log(`[API] Iniciando sync manual para: ${activityNumber}`);
+
         try {
+            // O ReportService agora busca o site_id internamente no banco
             const reportData = await reportService.getTicketFullDetails(activityNumber);
+
+            // Atualiza o ticket com os dados do crawler (incluindo Region e Hours)
             const updatedTicket = await ticketUsecase.updateTicketDetails(activityNumber, reportData);
 
             return res.json({
@@ -151,7 +171,11 @@ class APIController {
             });
 
         } catch (error) {
+            console.error(`[API] Erro no Crawler para ${activityNumber}: ${error.message}`);
+
+            // Marca como falha para não travar a fila do worker
             await ticketUsecase.markAsFailed(activityNumber, error.message);
+
             return res.json({
                 success: false,
                 message: `Falha ao obter dados: ${error.message}`

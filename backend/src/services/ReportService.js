@@ -1,24 +1,21 @@
 const https = require('https');
 const cheerio = require('cheerio');
 const { NtlmClient } = require('axios-ntlm');
+const Ticket = require('../models/Ticket'); // IMPORTANTE: Esta linha resolve o erro "Ticket is not defined"
 
 class ReportService {
     constructor() {
-        // URLs ajustadas conforme o funcionamento do servidor
         this.auditUrl = 'https://report.avaya.com/siebelreports/audittrail.aspx';
         this.detailsUrl = 'https://report.avaya.com/siebelreports/casedetails.aspx';
-        // Ajustado para /details/ conforme seu teste
         this.hoursUrl = 'https://report.avaya.com/details/hoursbreakdown.aspx';
+        this.fldrillUrl = 'https://report.avaya.com/siebelreports/fldrill.aspx';
 
-        const fullUser = process.env.REPORT_USER || '';
-        const pass = process.env.REPORT_PASS || '';
-
-        // Processa Handlers permitidos (Case-Insensitive)
         const handlersRaw = process.env.ALLOWED_HANDLERS || '';
         this.allowedHandlers = handlersRaw.split(',').map(h => h.trim().toUpperCase());
 
-        let domain = '';
-        let username = fullUser;
+        const fullUser = process.env.REPORT_USER || '';
+        const pass = process.env.REPORT_PASS || '';
+        let domain = '', username = fullUser;
         if (fullUser.includes('\\')) {
             const parts = fullUser.split('\\');
             domain = parts[0];
@@ -31,36 +28,41 @@ class ReportService {
 
     async getTicketFullDetails(ticketNumber) {
         try {
-            console.log(`[ReportService] Iniciando coleta de dados para: ${ticketNumber}`);
+            console.log(`[ReportService] Iniciando coleta para: ${ticketNumber}`);
 
-            // 1. Coleta Audit e Details (SiebelReports)
-            const [auditHtml, detailsHtml] = await Promise.all([
+            // Busca o site_id (customer_fl) na base de dados
+            const ticketDb = await Ticket.findOne({ activity_number: ticketNumber });
+            const siteId = ticketDb ? ticketDb.customer_fl : null;
+
+            // Executa as buscas em paralelo
+            const [auditHtml, detailsHtml, hoursHtml, flDrillHtml] = await Promise.all([
                 this._fetchHtml(this.auditUrl, { sr_num: ticketNumber }),
-                this._fetchHtml(this.detailsUrl, { case_id: ticketNumber })
+                this._fetchHtml(this.detailsUrl, { case_id: ticketNumber }),
+                this._fetchHtml(this.hoursUrl, { caseid: ticketNumber }),
+                siteId ? this._fetchHtml(this.fldrillUrl, { site_id: siteId }) : Promise.resolve(null)
             ]);
 
             const detailsData = this._parseCaseDetails(detailsHtml);
             const auditData = this._parseAuditTrail(auditHtml);
-
-            // 2. Coleta Hours Breakdown (Details) - Com Try/Catch para não quebrar o ticket se as horas falharem
-            let hoursBooked = 0;
-            try {
-                const hoursHtml = await this._fetchHtml(this.hoursUrl, { caseid: ticketNumber });
-                hoursBooked = this._parseHoursBreakdown(hoursHtml);
-            } catch (hError) {
-                console.warn(`[ReportService] Aviso: Falha ao obter horas para ${ticketNumber}: ${hError.message}`);
-            }
+            const hoursBooked = this._parseHoursBreakdown(hoursHtml);
+            const region = flDrillHtml ? this._parseRegion(flDrillHtml) : 'N/A';
 
             return {
                 ...detailsData,
                 ...auditData,
-                hoursBooked
+                hoursBooked,
+                region
             };
-
         } catch (error) {
             console.error(`[ReportService] Erro crítico no ticket ${ticketNumber}:`, error.message);
             throw error;
         }
+    }
+
+    _parseRegion(html) {
+        const $ = cheerio.load(html);
+        // Pega o conteúdo do span com id lblRegion (conforme fldrill.html)
+        return $('#lblRegion').text().trim() || 'N/A';
     }
 
     async _fetchHtml(baseUrl, params) {
@@ -80,7 +82,6 @@ class ReportService {
                 'Connection': 'keep-alive'
             }
         });
-
         return response.data;
     }
 
@@ -134,11 +135,9 @@ class ReportService {
         const $ = cheerio.load(html);
         const rows = this._extractAuditRows($);
         const sortedRows = rows.sort((a, b) => a.timestamp - b.timestamp);
-
         let assignmentEvent = sortedRows.find(row => row.field === 'Owner' && row.newValue === 'CXT_GLOBAL') ||
             sortedRows.find(row => row.field === 'Owner' && row.oldValue === 'CXT_GLOBAL') ||
             sortedRows.find(row => row.field === 'Owner' && row.newValue && !['CXT_GLOBAL', 'TANGO', 'Unassigned', ''].includes(row.newValue));
-
         let relevantEvents = assignmentEvent ? sortedRows.filter(row => row.timestamp <= assignmentEvent.timestamp) : sortedRows;
         return this._calculateFlags(relevantEvents);
     }

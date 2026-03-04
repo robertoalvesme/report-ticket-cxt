@@ -116,6 +116,7 @@ class TicketUsecase {
 
             // Campo de horas somadas por handlers permitidos
             if (data.hoursBooked !== undefined) updatePayload.hoursBooked = data.hoursBooked;
+            if (data.region !== undefined) updatePayload.region = data.region;
 
             const updatedTicket = await Ticket.findOneAndUpdate(
                 { activity_number: activityNumber },

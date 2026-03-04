@@ -42,6 +42,7 @@ const TicketSchema = new mongoose.Schema({
     srOwner: String,
     srAgeDays: String,
     hoursBooked: { type: Number, default: 0 },
+    region: String,
     updated: { type: Boolean, default: false, index: true }, // Indexado para fila de processamento
 
 

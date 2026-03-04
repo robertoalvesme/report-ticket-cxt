@@ -236,6 +236,7 @@ const downloadExcel = () => {
     'Service Action': item.serviceAction || '',
     'Resolution Action': item.resolutionAction || '',
     'Resolution Detail': item.resolutionDetail || '',
+    'Region': item.region || '',
     // ---------------------------------
     'Source': item.source || '',
     'Resolution Note': item.resolutionNote || '',
@@ -469,6 +470,11 @@ const downloadExcel = () => {
                     <span v-if="item.resolutionNote" class="italic truncate block" :title="item.resolutionNote">
                         "{{ item.resolutionNote }}"
                       </span>
+
+                    <span v-if="item.region" class="italic truncate block" :title="item.region">
+                        "{{ item.region }}"
+                      </span>
+
                   </div>
                 </div>
               </td>
