@@ -230,7 +230,7 @@ const downloadExcel = () => {
     'Credit Risk': isTrue(item.credit_risk) ? 'Yes' : 'No',
     'NRSSO': isTrue(item.nrsso) ? 'Yes' : 'No',
     // --- NOVAS COLUNAS ADICIONADAS ---
-    'Hours Booked': item.hoursBooked ?? 0,
+    'Hours Booked SD': item.hoursBooked ?? 0,
     'SR Age (Days)': item.srAgeDays || '',
     'Current Owner': item.srOwner || '',
     'Service Action': item.serviceAction || '',
@@ -241,7 +241,7 @@ const downloadExcel = () => {
     'Source': item.source || '',
     'Resolution Note': item.resolutionNote || '',
     'Customer': item.customer_name,
-    'Engineer': item.user_flu_name
+    'First Engineer Assigned': item.user_flu_name
   }))
 
   const worksheet = XLSX.utils.json_to_sheet(excelData)
