@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: ocd-worker
 spec:
-  replicas: 3 # Define aqui a quantidade de máquinas em paralelo
+  replicas: 3 # ESCALABILIDADE: 3 máquinas processando tickets
   selector:
     matchLabels:
       app: ocd-worker
@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: seu-registro/ocd-worker:latest
+          image: ocd-worker:latest # Substitua pela sua imagem buildada
           env:
             - name: API_URL
-              value: "http://ocd-app-service:5000/api" # Service DNS do K8s
+              value: "http://ocd-app-service:5000/api"

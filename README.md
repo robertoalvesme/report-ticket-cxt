@@ -31,3 +31,14 @@ docker exec ocd_db mongosh dashboard_ocd --quiet --eval 'printjson({ Total: db.t
 
 ## Obter dados de SR
 db.tickets.find({ "activity_number": "1-23493354272" }).pretty();
+
+
+# K8
+
+docker build -t ocd-backend:latest ./backend
+docker build -t ocd-worker:latest ./worker
+docker build -t ocd-frontend:latest ./frontend
+
+kubectl apply -f k8s/
+
+kubectl get pods

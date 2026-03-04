@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocd-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocd-frontend
+  template:
+    metadata:
+      labels:
+        app: ocd-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ocd-frontend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: VITE_API_URL
+              value: "http://localhost:30500/api" # URL que o navegador enxerga
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocd-frontend-service
+spec:
+  type: NodePort
+  selector:
+    app: ocd-frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      nodePort: 30000 # Dashboard acessível em http://localhost:30000
