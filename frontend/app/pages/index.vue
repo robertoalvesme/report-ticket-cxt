@@ -250,6 +250,8 @@ const downloadExcel = () => {
   const fileName = `CXT_Report_${datestart.value}_to_${dateend.value}.xlsx`
   XLSX.writeFile(workbook, fileName)
 }
+
+
 </script>
 
 <template>
@@ -464,15 +466,23 @@ const downloadExcel = () => {
 
                   <div class="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-1">
                       <span v-if="item.source" class="inline-flex items-center">
-                         <span class="font-medium mr-1">Src:</span> {{ item.source }}
+                         <span class="font-medium mr-1">Source:</span> {{ item.source }}
                       </span>
 
-                    <span v-if="item.resolutionNote" class="italic truncate block" :title="item.resolutionNote">
-                        "{{ item.resolutionNote }}"
+                      <span v-if="item.region" class="italic truncate block" :title="item.region">
+                        <span class="font-medium mr-1">Region:</span> {{ item.region }}
                       </span>
 
-                    <span v-if="item.region" class="italic truncate block" :title="item.region">
-                        "{{ item.region }}"
+                      <span v-if="item.hoursBooked" class="italic truncate block" :title="item.hoursBooked">
+                        <span class="font-medium mr-1">Hours Booked SD:</span> {{ item.hoursBooked }}
+                      </span>
+
+                      <span v-if="item.resolutionNote" class="italic truncate block" :title="item.resolutionNote">
+                        <span class="font-medium mr-1">Resolution Note:</span> "{{ item.resolutionNote }}"
+                      </span>
+
+                      <span v-if="item.resolutionDetail" class="italic truncate block" :title="item.resolutionDetail">
+                        <span class="font-medium mr-1">Resolution Detail:</span> "{{ item.resolutionDetail }}"
                       </span>
 
                   </div>
